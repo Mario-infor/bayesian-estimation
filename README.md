@@ -1,4 +1,4 @@
-# bayesian-estimation
+# Bayesian Estimation
 This repository is for projects solving the practices assigned
 at the bayesian estimation class of the Master in Computer Science.
 
@@ -22,9 +22,9 @@ temp = [(x - full_mean) ** 2 for x in data]
 full_stand_des = math.sqrt(sum(temp) / n)
 ```
 
-Pero cuando los datos van llegando a medida que pasa el tiempo
-entonces es necesario utilizar otro método para calcular la media
-y la desviación estandar con los datos conocidos hasta el momento.
+But when the data is arriving as time passes then it is necessary
+to use another method to calculate the mean and the standard deviation
+with the data known at a certain moment in time.
 
 ```
 # Formulas that calculates the next mean based on the actual known mean
@@ -36,11 +36,13 @@ mean_k_next = (k * known_mean + data[i + 1]) / (k + 1)
 variation_k_next = ((k * known_variation) + ((data[i + 1] - mean_k_next) ** 2)) / (k + 1)
 ```
 
-En este caso a medida que llega un nuevo dato se utiliza la media
-y la desviación conocidas hasta el momento para calcular los nuevos
-valores de media y desviación estándar. Todos los valores encontrados
-se almacenan para luego poder graficarlos y saber si los dos métodos 
-llegan a la misma solución.
+In this case, as new data arrives, the mean and the deviation known so far
+are used to calculate the new mean and standard deviation values. All values
+found are stored to later be able to graph them and know if the two
+methods come to the same solution.
 
+![Mean](Practice%201/Mean.png)
+![Deviation](Practice%201/Standard Deviation.png)
 
-
+As can be seen in the images in both cases the result is
+practically the same.
