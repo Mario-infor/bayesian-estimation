@@ -41,8 +41,33 @@ if __name__ == '__main__':
     print(mean_trajectory[len(mean_trajectory) - 1])
     print(stand_des_trajectory[len(stand_des_trajectory) - 1])
 
-    x_mean_full = np.linspace(0, n, n)
-    y_mean_full = np.full_like(x_mean_full, full_mean)
+    x_values = np.linspace(0, n, n)
 
-    plt.plot(x_mean_full, y_mean_full, 'r', x_mean_full[:-1], mean_trajectory, 'b')
+    y_mean_full = np.full_like(x_values, full_mean)
+    plt.plot(x_values, y_mean_full, 'r', label='full dataset')
+    plt.plot(x_values[:-1], mean_trajectory, 'b', label='dynamic dataset')
+
+    # add tags and title
+    plt.xlabel('Values from 0 to N')
+    plt.ylabel('Mean values')
+    plt.title('Graph to compare Means')
+
+    # Add legend
+    plt.legend()
+    # Show graph
+    plt.show()
+
+    y_full_stand_des = np.full_like(x_values, full_stand_des)
+    plt.plot(x_values, y_full_stand_des, 'r', label='full dataset')
+    plt.plot(x_values[:-1], stand_des_trajectory, 'b', label='dynamic dataset')
+
+    # add tags and title
+    plt.xlabel('Values from 0 to N')
+    plt.ylabel('Standard Deviation values')
+    plt.title('Graph to compare Standard Deviations')
+
+    # Add legend
+    plt.legend()
+    # Show graph
+    plt.show()
     pass
