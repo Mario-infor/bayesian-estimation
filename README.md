@@ -42,6 +42,7 @@ found are stored to later be able to graph them and know if the two
 methods come to the same solution.
 
 ![Mean](Practice%201/Mean.png)
+
 ![Deviation](Practice%201/Standard%20Deviation.png)
 
 As can be seen in the images in both cases the result is
