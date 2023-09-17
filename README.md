@@ -47,3 +47,9 @@ methods come to the same solution.
 
 As can be seen in the images in both cases the result is
 practically the same.
+
+## Practice 2
+
+Analytical demonstration that the formulas for calculating the mean when the
+complete data set is known is equivalent to the formula for calculating the 
+mean when the data arrive dynamically.
