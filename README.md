@@ -8,7 +8,10 @@ The objective of this practice is to compare the behavior of
 mean and standard deviation when the dataset is known
 completely and when the data is arriving dynamically.
 
-Whe the data set is known from the beginning the procedure is 
+__[Trello Board](https://trello.com/b/OLBWVFqw/bayesian-estimation-practice-1)__ - Task
+organization for this assignment.
+
+When the data set is known from the beginning the procedure is 
 quite straight forward. 
 
 ```
