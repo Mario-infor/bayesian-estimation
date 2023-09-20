@@ -8,7 +8,7 @@ The objective of this practice is to compare the behavior of
 mean and standard deviation when the dataset is known
 completely and when the data is arriving dynamically.
 
-__[Trello Board](https://trello.com/b/OLBWVFqw/bayesian-estimation-practice-1)__ - Task
+__[Trello Board](https://trello.com/b/OLBWVFqw/bayesian-estimation-practice-1)__ - Tasks
 organization for this assignment.
 
 When the data set is known from the beginning the procedure is 
@@ -56,3 +56,6 @@ practically the same.
 Analytical demonstration that the formulas for calculating the mean when the
 complete data set is known is equivalent to the formula for calculating the 
 mean when the data arrive dynamically.
+
+__[Trello Board](https://trello.com/b/S8qNeyPh/bayesian-estimation-practice-2)__ - Tasks
+organization for this assignment.
