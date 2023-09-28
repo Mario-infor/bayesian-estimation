@@ -93,7 +93,7 @@ int main ()
 	 setMouseCallback ("mouse kalman", on_mouseEvent, (void *) &mousev);
 
     n = 0;
-	 clock_gettime (CLOCK_REALTIME, &end);
+	//clock_gettime (CLOCK_REALTIME, &end);
     endns = (double)(end.tv_sec)*1e9 + (double)(end.tv_nsec);
     Mat estimated;
 	 while (1)
@@ -106,7 +106,7 @@ int main ()
 													prediction.at < float >(1));
 
             start = end;
-	         clock_gettime (CLOCK_REALTIME, &end);
+	         //clock_gettime (CLOCK_REALTIME, &end);
 	         startns = endns;
          	endns = (double)(end.tv_sec)*1e9 + (double)(end.tv_nsec);
          	realDts = (endns - startns) * 1e-9;

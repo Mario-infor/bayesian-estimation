@@ -91,13 +91,9 @@ int main()
 		{
 			// First predict, to update the internal statePre variable
 			// Primero, usamos una predicción para actualizar el estado del estado (statePre).
-
-			KF.statePre = KF.transitionMatrix * KF.statePost;
-			KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
-
-			//Mat prediction = KF.predict();
-
-			Point predictPt(KF.statePre.at < float >(0), KF.statePre.at < float >(1));
+			Mat prediction = KF.predict();
+			Point predictPt(prediction.at < float >(0),
+				prediction.at < float >(1));
 
 			// Get mouse point
 			// Obtenemos una medición del puntero del programa.
@@ -112,18 +108,8 @@ int main()
 
 		// Actualiza el estado a partir de la última medición.
 		// estimated contiene la medición que corresponde a dicho estado.
-		
-		Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
-		Mat inverse;
-		invert(temp, inverse, cv::DECOMP_LU);
-		KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
-
-		KF.statePost = KF.statePre + KF.gain * (measurement - KF.measurementMatrix * KF.statePre);
-		KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
-
-		//Mat estimated = KF.correct(measurement);
-
-		cout << "Estimated.shape : (" << KF.statePost.rows << ", " << KF.statePost.cols << ")" << endl;
+		Mat estimated = KF.correct(measurement);
+		cout << "Estimated.shape : (" << estimated.rows << ", " << estimated.cols << ")" << endl;
 
 		cout << "statePost: " << KF.statePost.t() << endl
 			<< "H: " << KF.measurementMatrix << endl
@@ -132,7 +118,7 @@ int main()
 
 
 		//Grafica la trayectoria del raton en cyan, y la trayectoria estimada en rojo. 
-		Point statePt(KF.statePost.at < float >(0), KF.statePost.at < float >(1));
+		Point statePt(estimated.at < float >(0), estimated.at < float >(1));
 		Point measPt(measurement(0), measurement(1));
 		// plot points
 		imshow("mouse kalman", img);

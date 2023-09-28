@@ -133,8 +133,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\EjemploRaton.cpp" />
-    <ClCompile Include="..\..\EjemploRaton2.cpp" />
     <ClCompile Include="Practice3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
