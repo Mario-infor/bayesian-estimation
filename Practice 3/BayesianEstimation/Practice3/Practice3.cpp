@@ -233,9 +233,10 @@ void mouse2()
 
 int main()
 {
-	//mouse();
-
-	mouse2();
+	// Choose between one example or the other
+	mouse();
+	
+	//mouse2();
 
 	return 0;
 }
