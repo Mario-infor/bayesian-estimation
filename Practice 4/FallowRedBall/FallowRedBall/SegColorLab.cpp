@@ -258,8 +258,6 @@ La imagen umbralizada se regresa en la matriz Mask.
 void Umbraliza(Mat& Im, Mat& Mask, Mat& M, Mat& iCov, float umD,
 	float umL)
 {
-	std::cout << M << std::endl;
-
 	Mat_ < Vec3f >::iterator it, itEnd;
 	Mat_ < uchar >::iterator itM;
 	float ligth, maha, ma, mb, va, vb, q, r, s;
@@ -343,7 +341,9 @@ int main(int argc, char** argv)
 	umDistChange(SLIDE_MAX, (void*)&umDist);
 	umLuzChange(0, (void*)&umLuz);
 
-	float pi = 2 * acos(0.0);
+	float w = 0.99;
+	float sigma = 1;
+	float p = 0.99;
 
 	first = true;
 	for (;;)
@@ -411,6 +411,39 @@ int main(int argc, char** argv)
 		Estos vectores hay que ajustarlos a un circulo usando la clase
 		Circle y ransacFit.*/
 
+		std::vector<std::vector<cv::Point>> filteredcontours;
+
+
+		for (const std::vector<cv::Point> contour : contours)
+		{
+			if (contour.size() >= 3)
+			{
+				std::vector<Point3s> fixedContour;
+				unsigned int nInl;
+
+				for (const cv::Point tempPoint : contour)
+				{
+					cv::Point3i newPoint(tempPoint.x, tempPoint.y, 0);
+					fixedContour.push_back(newPoint);
+				}
+
+				Circle tempCircle = Circle(fixedContour);
+
+				float error = tempCircle.fitCircle(fixedContour, w, sigma, p);
+				//float error = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
+
+				if (error != -1)
+				{
+					filteredcontours.push_back(contour);
+				}
+
+			}
+		}
+
+		cv::Mat filteredContourImage = cv::Mat::zeros(Mask.size(), CV_8UC3);
+		cv::drawContours(filteredContourImage, filteredcontours, -1, cv::Scalar(255, 0, 0), 2);
+
+		imshow("FilteredCountours", filteredContourImage);
 
 		imshow("Mascara", Mask);
 
