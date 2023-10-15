@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -134,30 +134,30 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Circle.cpp" />
-    <ClCompile Include="FallowRedBall.cpp" />
     <ClCompile Include="SegColorLab.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circle.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraAmarilla.png" />
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraRoja.png" />
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraVerde.png" />
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloAmarillo.png" />
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloRojo.png" />
-    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloVerde.png" />
-    <Image Include="ColorNaranja.png" />
-    <Image Include="ColorVerde.png" />
-    <Image Include="LastFrame.png" />
+    <Image Include="Resorces\Images\ColorNaranja.png" />
+    <Image Include="Resorces\Images\ColorNaranjaClaro.png" />
+    <Image Include="Resorces\Images\ColorVerde.png" />
+    <Image Include="Resorces\Images\LastFrame.png" />
+    <Image Include="Resorces\Images\MascaraAmarilla.png" />
+    <Image Include="Resorces\Images\MascaraRoja.png" />
+    <Image Include="Resorces\Images\MascaraVerde.png" />
+    <Image Include="Resorces\Images\ModeloAmarillo.png" />
+    <Image Include="Resorces\Images\ModeloRojo.png" />
+    <Image Include="Resorces\Images\ModeloVerde.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaAmarilla.mkv" />
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaRoja.mkv" />
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaVerde.mkv" />
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposAm.dat" />
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposRo.dat" />
-    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposVe.dat" />
+    <None Include="Resorces\Data\TiemposAm.dat" />
+    <None Include="Resorces\Data\TiemposRo.dat" />
+    <None Include="Resorces\Data\TiemposVe.dat" />
+    <None Include="Resorces\Videos\PelotaAmarilla.mkv" />
+    <None Include="Resorces\Videos\PelotaRoja.mkv" />
+    <None Include="Resorces\Videos\PelotaVerde.mkv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

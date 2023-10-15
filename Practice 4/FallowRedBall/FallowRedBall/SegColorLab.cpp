@@ -257,6 +257,7 @@ La imagen umbralizada se regresa en la matriz Mask.
 void Umbraliza (Mat & Im, Mat & Mask, Mat & M, Mat & iCov, float umD,
 								float umL)
 {
+	std::cout << M << std::endl;
 
 	 Mat_ < Vec3f >::iterator it, itEnd;
 	 Mat_ < uchar >::iterator itM;
@@ -268,7 +269,7 @@ void Umbraliza (Mat & Im, Mat & Mask, Mat & M, Mat & iCov, float umD,
 	 itEnd = Im.end < Vec3f > ();
 	 itM = Mask.begin < uchar > ();
 	 ma = M.at < float >(0, 0);
-	 mb = M.at < float >(0, 1);
+	 mb = M.at < float >(1, 0);
 	 q = iCov.at < float >(0, 0);
 	 r = iCov.at < float >(1, 0);
 	 s = iCov.at < float >(1, 1);
@@ -313,14 +314,18 @@ int main (int argc, char **argv)
 	 barData umLuz (100. / SLIDE_MAX, 0);
 	 int dSlidePos = 16, lSlidePos = 16;
 
-	 if (argc < 2)
+
+
+	 /*if (argc < 2)
 	 {
 			cerr << "Faltan Parámetros." << endl;
 			cerr << "Uso: SegColorLab NoCamara modelo_color" << endl << endl;
 			exit (1);
-	 }
+	 }*/
 
-	 VideoCapture cap (atoi (argv[1]));	// open the default camera
+	 //VideoCapture cap (atoi (argv[1]));	// open the default camera
+
+	 cv::VideoCapture cap("Resorces/Videos/PelotaVerde.mkv");
 
 	 if (!cap.isOpened ())				// check if we succeeded
 			return -1;
@@ -332,10 +337,8 @@ int main (int argc, char **argv)
 	 namedWindow ("Entrada", 1);
 	 namedWindow ("Mascara", 1);
 
-	 createTrackbar ("umDist", "Entrada", &dSlidePos, SLIDE_MAX, umDistChange,
-									 (void *) &umDist);
-	 createTrackbar ("umLuz", "Entrada", &lSlidePos, SLIDE_MAX, umLuzChange,
-									 (void *) &umLuz);
+	 createTrackbar ("umDist", "Entrada", &dSlidePos, SLIDE_MAX, umDistChange, (void *) &umDist);
+	 createTrackbar ("umLuz", "Entrada", &lSlidePos, SLIDE_MAX, umLuzChange, (void *) &umLuz);
 	 umDistChange (SLIDE_MAX, (void *) &umDist);
 	 umLuzChange (0, (void *) &umLuz);
 
@@ -362,7 +365,8 @@ int main (int argc, char **argv)
 				 Mat cFrame, mMask;
 
 				 //Calcula el modelo de color en base a la imagen cargada.
-				 cFrame = imread (argv[2]);
+				 //cFrame = imread (argv[2]);
+				 cFrame = imread("Resorces/Images/ColorVerde.png");
 				 cFrame.convertTo (fFrame, CV_32FC3);
 				 fFrame *= iFact;
 				 cvtColor (fFrame, labFrame, COLOR_BGR2Lab);
