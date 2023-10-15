@@ -104,10 +104,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Mario\Programacion\OpenCV2\opencv\build\x64\vc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world470d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -118,16 +121,43 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Mario\Programacion\OpenCV2\opencv\build\x64\vc16\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world470.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Circle.cpp" />
     <ClCompile Include="FallowRedBall.cpp" />
+    <ClCompile Include="SegColorLab.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Circle.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraAmarilla.png" />
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraRoja.png" />
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\MascaraVerde.png" />
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloAmarillo.png" />
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloRojo.png" />
+    <Image Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\ModeloVerde.png" />
+    <Image Include="ColorNaranja.png" />
+    <Image Include="ColorVerde.png" />
+    <Image Include="LastFrame.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaAmarilla.mkv" />
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaRoja.mkv" />
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\PelotaVerde.mkv" />
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposAm.dat" />
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposRo.dat" />
+    <None Include="..\..\..\..\..\..\..\Users\mherr\Downloads\BallTracking\BallTracking\TiemposVe.dat" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
