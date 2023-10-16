@@ -341,7 +341,7 @@ int main(int argc, char** argv)
 	umDistChange(SLIDE_MAX, (void*)&umDist);
 	umLuzChange(0, (void*)&umLuz);
 
-	float w = 0.99;
+	float w = 0.6;
 	float sigma = 1;
 	float p = 0.99;
 
@@ -413,10 +413,11 @@ int main(int argc, char** argv)
 
 		std::vector<std::vector<cv::Point>> filteredcontours;
 
+		float smallestError = 1000;
 
 		for (const std::vector<cv::Point> contour : contours)
 		{
-			if (contour.size() >= 3)
+			if (contour.size() >= 150 && contour.size() <= 350)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -429,14 +430,23 @@ int main(int argc, char** argv)
 
 				Circle tempCircle = Circle(fixedContour);
 
-				float error = tempCircle.fitCircle(fixedContour, w, sigma, p);
-				//float error = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
+				//float error = tempCircle.fitCircle(fixedContour, w, sigma, p);
+				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
-				if (error != -1)
+				if (tempError < smallestError && tempError < 4)
 				{
-					filteredcontours.push_back(contour);
+					
+					if (filteredcontours.size() == 0) 
+					{
+						filteredcontours.push_back(contour);
+					}
+					else
+					{
+						filteredcontours.pop_back();
+						filteredcontours.push_back(contour);
+					}
+					smallestError = tempError;
 				}
-
 			}
 		}
 
@@ -452,11 +462,12 @@ int main(int argc, char** argv)
 			break;
 
 	}
-	imwrite("LastFrame.png", frame);
+
+	cv::imwrite("LastFrame.png", frame);
 
 	//Cierra ventanas que fueron abiertas.
-	destroyWindow("Mascara");
-	destroyWindow("Entrada");
+	cv::destroyWindow("Mascara");
+	cv::destroyWindow("Entrada");
 
 	return 0;
 }
