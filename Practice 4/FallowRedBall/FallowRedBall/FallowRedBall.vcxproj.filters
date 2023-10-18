@@ -43,9 +43,6 @@
     <Image Include="Resorces\Images\ColorNaranjaClaro.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
-    <Image Include="Resorces\Images\ColorVerde.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
     <Image Include="Resorces\Images\LastFrame.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
@@ -65,6 +62,12 @@
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
     <Image Include="Resorces\Images\ModeloVerde.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
+    <Image Include="Resorces\Images\ColorVerde.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
+    <Image Include="Resorces\Images\ColorVerde2.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
   </ItemGroup>

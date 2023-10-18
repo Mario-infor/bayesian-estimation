@@ -143,6 +143,7 @@
     <Image Include="Resorces\Images\ColorNaranja.png" />
     <Image Include="Resorces\Images\ColorNaranjaClaro.png" />
     <Image Include="Resorces\Images\ColorVerde.png" />
+    <Image Include="Resorces\Images\ColorVerde2.png" />
     <Image Include="Resorces\Images\LastFrame.png" />
     <Image Include="Resorces\Images\MascaraAmarilla.png" />
     <Image Include="Resorces\Images\MascaraRoja.png" />

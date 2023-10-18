@@ -313,8 +313,6 @@ int main(int argc, char** argv)
 	barData umLuz(100. / SLIDE_MAX, 0);
 	int dSlidePos = 16, lSlidePos = 16;
 
-
-
 	/*if (argc < 2)
 	{
 		   cerr << "Faltan Parámetros." << endl;
@@ -417,7 +415,7 @@ int main(int argc, char** argv)
 
 		for (const std::vector<cv::Point> contour : contours)
 		{
-			if (contour.size() >= 150 && contour.size() <= 350)
+			if (contour.size() >= 100 && contour.size() <= 350)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -433,7 +431,7 @@ int main(int argc, char** argv)
 				//float error = tempCircle.fitCircle(fixedContour, w, sigma, p);
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
-				if (tempError < smallestError && tempError < 4)
+				if (tempError < smallestError)
 				{
 					
 					if (filteredcontours.size() == 0) 
