@@ -92,7 +92,6 @@ struct Circle
     */
     float fitBestCircle(std::vector<Point3s> &pts, unsigned int nInliers, unsigned int *idx);
 
-
     /*!
         \func void selectAndTestSample(vector <Point3s> &pts, float thr, unsigned int &inliers, unsigned int &outliers)
         \brief This function randomly select a sample of three points from the pts vector, find the circle that fits those the points, and count how many of them are inliers and how many are outliers; A point is an inlier if its distance to the circle is smaller or equal that a threshold (parameter thr), otherwise is deemed to be an outlier. The third component of each coordinate (Point3s contain three elements), store the status of the coordinate: 1 == inliers, 0 == outlier.
@@ -100,9 +99,12 @@ struct Circle
         \param float thr The threshold used to determine if a point is an inlier or an outlier.
         \param unsigned int &inliers used to  returns the number of inliers found.
         \param unsigned int &outliers used to return the number of outliers found.
+        \param Kthr Curvature threshold, use to discriminate contour coordinates
+        that have curvature that is too different to the one that is expected
+        (1/r).
     */
-    void selectAndTestSample(std::vector <Point3s> &pts, float thr, unsigned int &inliers, unsigned int &outliers, long seed);
-    
+    void selectAndTestSample(std::vector <Point3s>& pts, float thr, unsigned int& inliers, unsigned int& outliers, float kThr);
+
     /*!
         \func float ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, float sigma = 1, float p=0.99) 
         \brief This function implements the RANSAC algorithm to fit a circle to a set of points.
@@ -122,6 +124,22 @@ struct Circle
         \return the minimum distance between point p and the circle.
     */
     float distMin(Point3s &p);
+
+    /*
+     \func float computeCurvature(Point3s &p0, Point3s &p1, Point3s &p2);
+     \brief Compute the curvature of a curve from three adyacent points
+            in a contour. The curvature is computes as
+            \f$k = \frac{\dot(x)\ddot{y}-\ddot{x}\dot{y}}{(\dot{x}^2)+\dot{y}^2)^\frac{3}{2}}\f$
+            where (\f$\dot{x}\f$,\f$\dot{y}\f$) and
+            (\f$\ddot{x}\f$,\f$\ddot{y}\f$) are respectively the first and
+            second derivatives with respect to arc length s.
+     \param Point3s &p0, &p1, &p2. The plane coordinates of three adyacent
+            contour points.
+     \return The curvature measurement. It should be equal to the reciprocal
+             radius of the circle tangent to the contour at point p.
+  */
+    float computeCurvature(Point3s& p0, Point3s& p1, Point3s& p2);
+
 };
 
 #endif

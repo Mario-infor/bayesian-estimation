@@ -1,8 +1,8 @@
-
 #include "Circle.h"
 #include <iostream>
 #include <random>
 #include <chrono>
+#include <cstdlib>
 
 /*!
     \file
@@ -135,36 +135,36 @@ float Circle::fitBestCircle(vector<Point3s> &pts, unsigned int nInliers, unsigne
     }
 }
 
-void Circle::selectAndTestSample(vector <Point3s> &pts, float thr, unsigned int &nInliers, unsigned int &nOutliers, long seed)
+void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int& nInliers, unsigned int& nOutliers, float kThr = 0.)
 {
     unsigned int l, inl;
     unsigned int idx1, idx2, idx3;
-    vector<Point3s>::iterator it,end;
-    
-    std::mt19937 gen(seed);
-    std::uniform_real_distribution<double> dis(0.0, 1.0);
-
+    float d, K;
+    vector<Point3s>::iterator it, end;
 
     l = pts.size();
     if (l >= 3)
     {
         do
         {
-            idx1 = (int)(l * dis(gen));
-            idx2 = (int)(l * dis(gen));
-            idx3 = (int)(l * dis(gen));
+            idx1 = (int)(l * ((double)rand() / (RAND_MAX)));
+            idx2 = (int)(l * ((double)rand() / (RAND_MAX)));
+            idx3 = (int)(l * ((double)rand() / (RAND_MAX)));
         } while (idx3 == idx1 || idx3 == idx2 || idx1 == idx2);
 
         undefined = true;
         h = k = r = 0;
-        fitCircle( pts[idx1].x, pts[idx1].y, pts[idx2].x, pts[idx2].y, pts[idx3].x, pts[idx3].y);
+        fitCircle(pts[idx1].x, pts[idx1].y, pts[idx2].x, pts[idx2].y, pts[idx3].x, pts[idx3].y);
         it = pts.begin();
         end = pts.end();
         inl = 0;
-        for(;it != end; it++)
-        {
-            double d;
 
+        //Deal with the first coordinate
+        K = computeCurvature(pts[l - 1], pts[0], pts[1]);
+        if (!kThr || fabs(r * K - 1) < kThr)
+        {
+            if (kThr)
+                cout << "K:" << K << endl;
             d = distMin(*it);
             if (d <= thr)
             {
@@ -174,6 +174,45 @@ void Circle::selectAndTestSample(vector <Point3s> &pts, float thr, unsigned int 
             else
                 (*it).z = 0;
         }
+        else
+            (*it).z = 0;
+        //Deal with the rest but the last one.
+        for (++it; it + 1 != end; it++)
+        {
+            K = computeCurvature(*(it - 1), *(it), *(it + 1));
+            if (!kThr || fabs(r * K - 1) < kThr)
+            {
+                if (kThr)
+                    cout << "K:" << K << endl;
+                d = distMin(*it);
+                if (d <= thr)
+                {
+                    (*it).z = 1;
+                    inl++;
+                }
+                else
+                    (*it).z = 0;
+            }
+            else
+                (*it).z = 0;
+        }
+        //Deal with the last one.
+        K = computeCurvature(*(it - 1), *(it), pts[0]);
+        if (!kThr || fabs(r * K - 1) < kThr)
+        {
+            if (kThr)
+                cout << "K:" << K << endl;
+            d = distMin(*it);
+            if (d <= thr)
+            {
+                (*it).z = 1;
+                inl++;
+            }
+            else
+                (*it).z = 0;
+        }
+        else
+            (*it).z = 0;
         nInliers = inl;
         nOutliers = l - inl;
     }
@@ -235,4 +274,23 @@ float Circle::ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, floa
 float Circle::distMin(Point3s &p)
 {
     return fabs(sqrt(pow(h-p.x,2)+pow(k-p.y,2))-r);
+}
+
+float Circle::computeCurvature(Point3s& p0, Point3s& p1, Point3s& p2)
+{
+    float dx, dy, dx2, dy2, dxb, dyb, dxf, dyf, Sb, Sf, iS2;
+
+    dxb = p1.x - p0.x;
+    dyb = p1.y - p0.y;
+    Sb = sqrt(dxb * dxb + dyb * dyb);
+    dxf = p2.x - p1.x;
+    dyf = p2.y - p1.y;
+    Sf = sqrt(dxf * dxf + dyf * dyf);
+    assert(Sb != 0 && Sf != 0);
+    dx = 0.5 * (dxb / Sb + dxf / Sf);
+    dy = 0.5 * (dyb / Sb + dyf / Sf);
+    iS2 = 2. / ((Sb + Sf) * Sb * Sf);
+    dx2 = (Sb * dxf - Sf * dxb) * iS2;
+    dy2 = (Sb * dyf - Sf * dyb) * iS2;
+    return (dx * dy2 - dy * dx2) / pow(dx * dx + dy * dy, 1.5);
 }

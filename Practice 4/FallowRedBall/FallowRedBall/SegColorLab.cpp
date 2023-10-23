@@ -313,6 +313,25 @@ int main(int argc, char** argv)
 	barData umLuz(100. / SLIDE_MAX, 0);
 	int dSlidePos = 16, lSlidePos = 16;
 
+	KalmanFilter KF(6, 8, 0);
+
+	float X = 0;
+	float Y = 0;
+	float Z = 0;
+	float XDer = 0;
+	float YDer = 0;
+	float ZDer = 0;
+	float Rm = 0;
+
+	KF.transitionMatrix =
+		(Mat_ < float >(5, 6) <<
+			1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
+			0,				1/Z,			-Y/pow(Z,2),							0,		0,		0,
+			ZDer/pow(Z,2),	0,				-XDer/pow(Z,2)-(2*X*ZDer)/pow(Z,3),		1/Z,	0,		X/pow(Z,2),
+			0,				ZDer/pow(Z,2),	-YDer/pow(Z,2)-(2*Y*ZDer)/pow(Z,3),		0,		1/Z,	Y/pow(Z,2),
+			0,				0,				-Rm/pow(Z,2),							0,		0,		0
+		);
+
 	/*if (argc < 2)
 	{
 		   cerr << "Faltan Parámetros." << endl;
@@ -383,31 +402,15 @@ int main(int argc, char** argv)
 
 		Umbraliza(labFrame, Mask, Mean, iCov, umDist.val, umLuz.val);
 
-
-		/*Aqui tienen que hacer lo necesario para que a la imagen segmentada
-		que está almacenada en Mask se extraga el contorno y se ajuste un
-		circulo a esta. Para esto, usar la función findContours.
-
-		Algo asó como lo que sigue:
-
-		findContours(output, Contornos, RETR_EXTERNAL, CHAIN_APPROX_NONE);
-
-		Donde Contorns es como sigue:
-
-		vector< vector<Point> >Contornos;*/
-
 		std::vector<std::vector<cv::Point>> contours;
 		cv::findContours(Mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-		cv::Mat contourImage = cv::Mat::zeros(Mask.size(), CV_8UC3);
+		cv::Mat contourImage;
+		frame.copyTo(contourImage);
+
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
 
 		imshow("Countours", contourImage);
-
-		/*Cada elemento de Contornos es una vector de coordenadas y cada uno
-		de estos vectores corresponde a un objeto segmentado en la imagen.
-		Estos vectores hay que ajustarlos a un circulo usando la clase
-		Circle y ransacFit.*/
 
 		std::vector<std::vector<cv::Point>> filteredcontours;
 
@@ -415,7 +418,7 @@ int main(int argc, char** argv)
 
 		for (const std::vector<cv::Point> contour : contours)
 		{
-			if (contour.size() >= 100 && contour.size() <= 350)
+			if (contour.size() >= 50 && contour.size() <= 350)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -428,12 +431,10 @@ int main(int argc, char** argv)
 
 				Circle tempCircle = Circle(fixedContour);
 
-				//float error = tempCircle.fitCircle(fixedContour, w, sigma, p);
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
 				if (tempError < smallestError)
 				{
-					
 					if (filteredcontours.size() == 0) 
 					{
 						filteredcontours.push_back(contour);
@@ -448,7 +449,8 @@ int main(int argc, char** argv)
 			}
 		}
 
-		cv::Mat filteredContourImage = cv::Mat::zeros(Mask.size(), CV_8UC3);
+		cv::Mat filteredContourImage;
+		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredcontours, -1, cv::Scalar(255, 0, 0), 2);
 
 		imshow("FilteredCountours", filteredContourImage);
