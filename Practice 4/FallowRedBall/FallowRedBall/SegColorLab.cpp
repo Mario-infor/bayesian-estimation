@@ -275,14 +275,14 @@ void Umbraliza(Mat& Im, Mat& Mask, Mat& M, Mat& iCov, float umD,
 
 	for (; it != itEnd; ++it, ++itM)
 	{
-		ligth = (*it)[0];					//Solo analizamos pixeles lo suf. brillantes.
+		ligth = (*it)[0];					// We only analyze pixels that are bright enough.
 		if (ligth > umL)
 		{
-			// Restamos el vector promedio a cada pixel.
+			// We subtract the average vector from each pixel.
 			va = (*it)[1] - ma;
 			vb = (*it)[2] - mb;
 
-			//Calculamos la distancia de mahalanobis del pixel al modelo
+			// We calculate the mahalanobis distance from the pixel to the model
 			// [va,vb]*iCov*[va;vb]
 			maha = vb * (s * vb + r * va) + va * (r * vb + q * va);
 			meanMaha += maha;
@@ -306,13 +306,13 @@ int main(int argc, char** argv)
 {
 	Mat frame, fFrame, labFrame;
 	Mat Mask, Mean, Cov, iCov, M;
-	//int cont;
 	double iFact = 1. / 255.;
 	bool first;
 	barData umDist(40. / SLIDE_MAX, 10);
 	barData umLuz(100. / SLIDE_MAX, 0);
 	int dSlidePos = 16, lSlidePos = 16;
 
+	// Initialization of Extended Kalman Filter
 	KalmanFilter KF(6, 8, 0);
 
 	float X = 0;
@@ -321,8 +321,10 @@ int main(int argc, char** argv)
 	float XDer = 0;
 	float YDer = 0;
 	float ZDer = 0;
+
 	float Rm = 0;
 
+	// Jacobian of transitionMatrix
 	KF.transitionMatrix =
 		(Mat_ < float >(5, 6) <<
 			1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
@@ -332,21 +334,34 @@ int main(int argc, char** argv)
 			0,				0,				-Rm/pow(Z,2),							0,		0,		0
 		);
 
-	/*if (argc < 2)
-	{
-		   cerr << "Faltan Parámetros." << endl;
-		   cerr << "Uso: SegColorLab NoCamara modelo_color" << endl << endl;
-		   exit (1);
-	}*/
+	// Initialization of measurement vector
+	Mat_ < float >measurement(5, 1);
+	measurement.setTo(Scalar(0));
 
-	//VideoCapture cap (atoi (argv[1]));	// open the default camera
+	// Initialize the stateVector
+	KF.statePre.at < float >(0) = X;
+	KF.statePre.at < float >(1) = Y;
+	KF.statePre.at < float >(2) = Z;
+	KF.statePre.at < float >(3) = XDer;
+	KF.statePre.at < float >(4) = YDer;
+	KF.statePre.at < float >(5) = ZDer;
 
+	// Initialize the noise matrix
+	setIdentity(KF.measurementMatrix);
+	KF.measurementMatrix *= 1;
+
+	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
+	setIdentity(KF.measurementNoiseCov, Scalar::all(10));
+	setIdentity(KF.errorCovPost, Scalar::all(.1));
+
+	// Read video
 	cv::VideoCapture cap("Resorces/Videos/PelotaVerde.mkv");
 
-	if (!cap.isOpened())				// check if we succeeded
+	// check if we succeeded
+	if (!cap.isOpened())				
 		return -1;
 
-	//Definimos el tamaño de las imagenes a ser capturadas.
+	// We define the size of the images to be captured
 	cap.set(CAP_PROP_FRAME_WIDTH, IM_WIDTH);
 	cap.set(CAP_PROP_FRAME_HEIGHT, IM_HEIGHT);
 
@@ -365,27 +380,27 @@ int main(int argc, char** argv)
 	first = true;
 	for (;;)
 	{
-		//Capturamos una imagen, y validamos que haya funcionado la operacion.
+		// We capture an image, and validate that the operation worked
 		cap >> frame;
 		if (frame.empty())
 			break;
 
 		frame.convertTo(fFrame, CV_32FC3);
 
-		//Es necesario normalizar la image BGR al intervalo [0,1] antes de convertir a espacio CIE Lab; en este caso iFact = 1./255
+		// It is necessary to normalize the BGR image to the interval [0,1] before converting to CIE Lab space
+		// in this case iFact = 1./255
 		fFrame *= iFact;
 		cvtColor(fFrame, labFrame, COLOR_BGR2Lab);
 
-		//En la primera iteración inicializamos las imagenes que usaremos para
-		//almacenar resultados.
+		// In the first iteration we initialize the images that we will use to store results
 		if (first)
 		{
 			Size sz(frame.cols, frame.rows);
 
 			Mat cFrame, mMask;
 
-			//Calcula el modelo de color en base a la imagen cargada.
-			//cFrame = imread (argv[2]);
+			// Calculates the color model based on the uploaded image
+			// cFrame = imread (argv[2]);
 			cFrame = imread("Resorces/Images/ColorVerde.png");
 			cFrame.convertTo(fFrame, CV_32FC3);
 			fFrame *= iFact;
@@ -399,25 +414,26 @@ int main(int argc, char** argv)
 		}
 
 		imshow("Entrada", frame);
-
 		Umbraliza(labFrame, Mask, Mean, iCov, umDist.val, umLuz.val);
 
+		// Find all contours in the image
 		std::vector<std::vector<cv::Point>> contours;
 		cv::findContours(Mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		cv::Mat contourImage;
 		frame.copyTo(contourImage);
 
+		// Draw contours on image and show the resulting image
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
-
 		imshow("Countours", contourImage);
 
-		std::vector<std::vector<cv::Point>> filteredcontours;
 
+		std::vector<std::vector<cv::Point>> filteredcontours;
 		float smallestError = 1000;
 
 		for (const std::vector<cv::Point> contour : contours)
 		{
+			// Rule out contours with too few or too many points
 			if (contour.size() >= 50 && contour.size() <= 350)
 			{
 				std::vector<Point3s> fixedContour;
@@ -429,10 +445,11 @@ int main(int argc, char** argv)
 					fixedContour.push_back(newPoint);
 				}
 
+				// Apply RansacFit to find out if contour belongs to a circle or not
 				Circle tempCircle = Circle(fixedContour);
-
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
+				// Make shure that the contour saved is the one with lesser error
 				if (tempError < smallestError)
 				{
 					if (filteredcontours.size() == 0) 
@@ -452,12 +469,10 @@ int main(int argc, char** argv)
 		cv::Mat filteredContourImage;
 		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredcontours, -1, cv::Scalar(255, 0, 0), 2);
-
 		imshow("FilteredCountours", filteredContourImage);
-
 		imshow("Mascara", Mask);
 
-		//Si el usuario oprime una tecla, termina el ciclo.
+		// If the user presses a key, the loop ends
 		if (waitKeyEx(30) >= 0)
 			break;
 
@@ -465,7 +480,7 @@ int main(int argc, char** argv)
 
 	cv::imwrite("LastFrame.png", frame);
 
-	//Cierra ventanas que fueron abiertas.
+	// Close windows that were opened
 	cv::destroyWindow("Mascara");
 	cv::destroyWindow("Entrada");
 
