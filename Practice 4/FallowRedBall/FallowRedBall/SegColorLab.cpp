@@ -306,23 +306,16 @@ void Umbraliza(Mat& Im, Mat& Mask, Mat& M, Mat& iCov, float umD,
 std::vector<int> readTimes(string path)
 {
 	std::vector<int> data;
+	std::ifstream file(path);
 
-	std::ifstream inputFile(path, std::ios::binary);
-	if (!inputFile) 
-	{
-		std::cerr << "No se pudo abrir el archivo." << std::endl;
-	}
+	if (!file) 
+		std::cerr << "File not found." << std::endl;
 	else
 	{
-		std::vector<int> data;
 		int value;
-		while (inputFile.read(reinterpret_cast<char*>(&value), sizeof(int))) {
+		while (file >> value)
 			data.push_back(value);
-		}
-
-		
 	}
-	inputFile.close();
 
 	return data;
 }
