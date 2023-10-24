@@ -325,7 +325,8 @@ int main(int argc, char** argv)
 	Mat frame, fFrame, labFrame;
 	Mat Mask, Mean, Cov, iCov, M;
 	double iFact = 1. / 255.;
-	bool first;
+	bool firstImage;
+	bool firstKalman;
 	barData umDist(40. / SLIDE_MAX, 10);
 	barData umLuz(100. / SLIDE_MAX, 0);
 	int dSlidePos = 16, lSlidePos = 16;
@@ -335,17 +336,23 @@ int main(int argc, char** argv)
 
 	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
+	float timeK = 1;
+	float timeK1 = 3;
+
+	float deltaT = timeK1 - timeK;
+
 	float X = 1;
 	float Y = 1;
 	float Z = 1;
-	float XDer = 1;
-	float YDer = 1;
-	float ZDer = 1;
+	float XDer = 0;
+	float YDer = 0;
+	float ZDer = 0;
 
 	float Rm = 0.08;
 
 	// Jacobian of transitionMatrix
-	KF.transitionMatrix =
+	//KF.transitionMatrix =
+	Mat_ <float> tempTransitionMatrix =
 		(Mat_ < float >(5, 6) <<
 			1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
 			0,				1/Z,			-Y/pow(Z,2),							0,		0,		0,
@@ -353,6 +360,8 @@ int main(int argc, char** argv)
 			0,				ZDer/pow(Z,2),	-YDer/pow(Z,2)-(2*Y*ZDer)/pow(Z,3),		0,		1/Z,	Y/pow(Z,2),
 			0,				0,				-Rm/pow(Z,2),							0,		0,		0
 		);
+
+	KF.transitionMatrix = tempTransitionMatrix.t();
 
 	// Initialization of measurement vector
 	Mat_ < float >measurement(5, 1);
@@ -369,7 +378,6 @@ int main(int argc, char** argv)
 	// Initialize the noise matrix
 	setIdentity(KF.measurementMatrix);
 	KF.measurementMatrix *= 1;
-
 	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
 	setIdentity(KF.measurementNoiseCov, Scalar::all(10));
 	setIdentity(KF.errorCovPost, Scalar::all(.1));
@@ -397,7 +405,8 @@ int main(int argc, char** argv)
 	float sigma = 1;
 	float p = 0.99;
 
-	first = true;
+	firstImage = true;
+	firstKalman = true;
 	for (;;)
 	{
 		// We capture an image, and validate that the operation worked
@@ -413,7 +422,7 @@ int main(int argc, char** argv)
 		cvtColor(fFrame, labFrame, COLOR_BGR2Lab);
 
 		// In the first iteration we initialize the images that we will use to store results
-		if (first)
+		if (firstImage)
 		{
 			Size sz(frame.cols, frame.rows);
 
@@ -430,10 +439,10 @@ int main(int argc, char** argv)
 
 			Mask = Mat::ones(sz, CV_8U);
 
-			first = false;
+			firstImage = false;
 		}
 
-		imshow("Entrada", frame);
+		cv::imshow("Entrada", frame);
 		Umbraliza(labFrame, Mask, Mean, iCov, umDist.val, umLuz.val);
 
 		// Find all contours in the image
@@ -445,7 +454,7 @@ int main(int argc, char** argv)
 
 		// Draw contours on image and show the resulting image
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
-		imshow("Countours", contourImage);
+		cv::imshow("Countours", contourImage);
 
 		std::vector<std::vector<cv::Point>> filteredContours;
 		Circle tempCircle;
@@ -490,7 +499,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		if (filteredContours.size() > 0)
+		if (!firstKalman)
 		{
 			// First predict, to update the internal statePre variable
 			KF.statePre = KF.transitionMatrix * KF.statePost;
@@ -506,17 +515,19 @@ int main(int argc, char** argv)
 		// Update the state from the last measurement.
 		Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
 		Mat inverse;
-		invert(temp, inverse, cv::DECOMP_LU);
+		cv::invert(temp, inverse, cv::DECOMP_LU);
 		KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
 
 		KF.statePost = KF.statePre + KF.gain * (measurement - KF.measurementMatrix * KF.statePre);
 		KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
 
+		firstKalman = false;
+
 		cv::Mat filteredContourImage;
 		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
-		imshow("FilteredCountours", filteredContourImage);
-		imshow("Mascara", Mask);
+		cv::imshow("FilteredCountours", filteredContourImage);
+		cv::imshow("Mascara", Mask);
 
 		// If the user presses a key, the loop ends
 		if (waitKeyEx(30) >= 0)
