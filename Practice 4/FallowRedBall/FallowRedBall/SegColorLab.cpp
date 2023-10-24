@@ -1,6 +1,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <cstdio>
 #include "Circle.h"
@@ -302,6 +303,30 @@ void Umbraliza(Mat& Im, Mat& Mask, Mat& M, Mat& iCov, float umD,
 #endif
 }
 
+std::vector<int> readTimes(string path)
+{
+	std::vector<int> data;
+
+	std::ifstream inputFile(path, std::ios::binary);
+	if (!inputFile) 
+	{
+		std::cerr << "No se pudo abrir el archivo." << std::endl;
+	}
+	else
+	{
+		std::vector<int> data;
+		int value;
+		while (inputFile.read(reinterpret_cast<char*>(&value), sizeof(int))) {
+			data.push_back(value);
+		}
+
+		
+	}
+	inputFile.close();
+
+	return data;
+}
+
 int main(int argc, char** argv)
 {
 	Mat frame, fFrame, labFrame;
@@ -313,16 +338,18 @@ int main(int argc, char** argv)
 	int dSlidePos = 16, lSlidePos = 16;
 
 	// Initialization of Extended Kalman Filter
-	KalmanFilter KF(6, 8, 0);
+	KalmanFilter KF(6, 5, 0);
 
-	float X = 0;
-	float Y = 0;
-	float Z = 0;
-	float XDer = 0;
-	float YDer = 0;
-	float ZDer = 0;
+	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
-	float Rm = 0;
+	float X = 1;
+	float Y = 1;
+	float Z = 1;
+	float XDer = 1;
+	float YDer = 1;
+	float ZDer = 1;
+
+	float Rm = 0.08;
 
 	// Jacobian of transitionMatrix
 	KF.transitionMatrix =
@@ -427,8 +454,10 @@ int main(int argc, char** argv)
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
 		imshow("Countours", contourImage);
 
+		std::vector<std::vector<cv::Point>> filteredContours;
+		Circle tempCircle;
+		Circle bestCircle;
 
-		std::vector<std::vector<cv::Point>> filteredcontours;
 		float smallestError = 1000;
 
 		for (const std::vector<cv::Point> contour : contours)
@@ -446,29 +475,53 @@ int main(int argc, char** argv)
 				}
 
 				// Apply RansacFit to find out if contour belongs to a circle or not
-				Circle tempCircle = Circle(fixedContour);
+				tempCircle = Circle(fixedContour);
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
 				// Make shure that the contour saved is the one with lesser error
 				if (tempError < smallestError)
 				{
-					if (filteredcontours.size() == 0) 
+					bestCircle = tempCircle;
+					smallestError = tempError;
+
+					if (filteredContours.size() == 0)
 					{
-						filteredcontours.push_back(contour);
+						filteredContours.push_back(contour);
 					}
 					else
 					{
-						filteredcontours.pop_back();
-						filteredcontours.push_back(contour);
+						filteredContours.pop_back();
+						filteredContours.push_back(contour);
 					}
-					smallestError = tempError;
 				}
 			}
 		}
 
+		if (filteredContours.size() > 0)
+		{
+			// First predict, to update the internal statePre variable
+			KF.statePre = KF.transitionMatrix * KF.statePost;
+			KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
+
+			measurement(0) = bestCircle.h;
+			measurement(1) = bestCircle.k;
+			//measurement(2) = 
+			//measurement(3) =
+			measurement(4) = bestCircle.r;
+		}
+
+		// Update the state from the last measurement.
+		Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
+		Mat inverse;
+		invert(temp, inverse, cv::DECOMP_LU);
+		KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
+
+		KF.statePost = KF.statePre + KF.gain * (measurement - KF.measurementMatrix * KF.statePre);
+		KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
+
 		cv::Mat filteredContourImage;
 		frame.copyTo(filteredContourImage);
-		cv::drawContours(filteredContourImage, filteredcontours, -1, cv::Scalar(255, 0, 0), 2);
+		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 		imshow("FilteredCountours", filteredContourImage);
 		imshow("Mascara", Mask);
 
