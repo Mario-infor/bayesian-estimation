@@ -336,10 +336,10 @@ int main(int argc, char** argv)
 
 	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
-	float timeK = 1;
-	float timeK1 = 3;
 
-	float deltaT = timeK1 - timeK;
+	int index = 1;
+	float deltaT;
+	float deltaTOld;
 
 	float X = 1;
 	float Y = 1;
@@ -349,19 +349,6 @@ int main(int argc, char** argv)
 	float ZDer = 0;
 
 	float Rm = 0.08;
-
-	// Jacobian of transitionMatrix
-	//KF.transitionMatrix =
-	Mat_ <float> tempTransitionMatrix =
-		(Mat_ < float >(5, 6) <<
-			1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
-			0,				1/Z,			-Y/pow(Z,2),							0,		0,		0,
-			ZDer/pow(Z,2),	0,				-XDer/pow(Z,2)-(2*X*ZDer)/pow(Z,3),		1/Z,	0,		X/pow(Z,2),
-			0,				ZDer/pow(Z,2),	-YDer/pow(Z,2)-(2*Y*ZDer)/pow(Z,3),		0,		1/Z,	Y/pow(Z,2),
-			0,				0,				-Rm/pow(Z,2),							0,		0,		0
-		);
-
-	KF.transitionMatrix = tempTransitionMatrix.t();
 
 	// Initialization of measurement vector
 	Mat_ < float >measurement(5, 1);
@@ -376,8 +363,6 @@ int main(int argc, char** argv)
 	KF.statePre.at < float >(5) = ZDer;
 
 	// Initialize the noise matrix
-	setIdentity(KF.measurementMatrix);
-	KF.measurementMatrix *= 1;
 	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
 	setIdentity(KF.measurementNoiseCov, Scalar::all(10));
 	setIdentity(KF.errorCovPost, Scalar::all(.1));
@@ -499,6 +484,8 @@ int main(int argc, char** argv)
 			}
 		}
 
+		
+
 		if (!firstKalman)
 		{
 			// First predict, to update the internal statePre variable
@@ -510,7 +497,41 @@ int main(int argc, char** argv)
 			//measurement(2) = 
 			//measurement(3) =
 			measurement(4) = bestCircle.r;
+
+			deltaT = times.at(index) - deltaTOld;
+			index++;
 		}
+		else
+		{
+			deltaT = times.at(0);
+		}
+
+		// Matrix A
+		KF.transitionMatrix =
+			(Mat_ < float >(6, 6) <<
+				1, 0, 0, deltaT, 0, 0, \
+				0, 1, 0, 0, deltaT, 0, \
+				0, 0, 1, 0, 0, deltaT, \
+				0, 0, 0, 1, 0, 0, \
+				0, 0, 0, 0, 1, 0, \
+				0, 0, 0, 0, 0, 1);
+
+		X = KF.statePre.at < float >(0);
+		Y = KF.statePre.at < float >(1);
+		Z = KF.statePre.at < float >(2);
+		XDer = KF.statePre.at < float >(3);
+		YDer = KF.statePre.at < float >(4);
+		ZDer = KF.statePre.at < float >(5);
+
+		// Jacobian of h(x)
+		KF.measurementMatrix =
+			(Mat_ < float >(5, 6) <<
+				1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
+				0,				1/Z,			-Y/pow(Z,2),							0,		0,		0,
+				ZDer/pow(Z,2),	0,				-XDer/pow(Z,2)-(2*X*ZDer)/pow(Z,3),		1/Z,	0,		X/pow(Z,2),
+				0,				ZDer/pow(Z,2),	-YDer/pow(Z,2)-(2*Y*ZDer)/pow(Z,3),		0,		1/Z,	Y/pow(Z,2),
+				0,				0,				-Rm/pow(Z,2),							0,		0,		0
+			);
 
 		// Update the state from the last measurement.
 		Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
@@ -522,6 +543,7 @@ int main(int argc, char** argv)
 		KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
 
 		firstKalman = false;
+		deltaT 
 
 		cv::Mat filteredContourImage;
 		frame.copyTo(filteredContourImage);
