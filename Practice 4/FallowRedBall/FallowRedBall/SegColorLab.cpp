@@ -466,7 +466,7 @@ int main(int argc, char** argv)
 		for (const std::vector<cv::Point> contour : contours)
 		{
 			// Rule out contours with too few or too many points
-			if (contour.size() >= 25 && contour.size() <= 400)
+			if (contour.size() >= 50 && contour.size() <= 350)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -499,6 +499,10 @@ int main(int argc, char** argv)
 				}
 			}
 		}
+
+		cv::Mat filteredContourImage;
+		frame.copyTo(filteredContourImage);
+		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 
 		if (bestCircle.h != 0 || bestCircle.k != 0 || bestCircle.r != 0)
 		{
@@ -608,13 +612,11 @@ int main(int argc, char** argv)
 			float drawK = tempDraw.at<float>(1, 0);
 			float drawR = f * Rm / KF.statePost.at<float>(2);
 
-			cv::Mat filteredContourImage;
-			frame.copyTo(filteredContourImage);
-			cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 			cv::circle(filteredContourImage, cv::Point(drawH, drawK), drawR, cv::Scalar(0, 255, 0), 2);
-			cv::imshow("FilteredCountours", filteredContourImage);
-			cv::imshow("Mascara", Mask);
 		}
+
+		cv::imshow("FilteredCountours", filteredContourImage);
+		cv::imshow("Mascara", Mask);
 
 		// If the user presses a key, the loop ends
 		if (waitKeyEx(30) >= 0)
