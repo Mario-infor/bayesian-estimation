@@ -163,8 +163,8 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
         K = computeCurvature(pts[l - 1], pts[0], pts[1]);
         if (!kThr || fabs(r * K - 1) < kThr)
         {
-            if (kThr)
-                cout << "K:" << K << endl;
+            //if (kThr)
+             //   cout << "K:" << K << endl;
             d = distMin(*it);
             if (d <= thr)
             {
@@ -182,8 +182,8 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
             K = computeCurvature(*(it - 1), *(it), *(it + 1));
             if (!kThr || fabs(r * K - 1) < kThr)
             {
-                if (kThr)
-                    cout << "K:" << K << endl;
+                //if (kThr)
+                  //  cout << "K:" << K << endl;
                 d = distMin(*it);
                 if (d <= thr)
                 {
@@ -200,8 +200,8 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
         K = computeCurvature(*(it - 1), *(it), pts[0]);
         if (!kThr || fabs(r * K - 1) < kThr)
         {
-            if (kThr)
-                cout << "K:" << K << endl;
+            //if (kThr)
+              //  cout << "K:" << K << endl;
             d = distMin(*it);
             if (d <= thr)
             {

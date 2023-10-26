@@ -329,17 +329,29 @@ int main(int argc, char** argv)
 	bool firstKalman;
 	barData umDist(40. / SLIDE_MAX, 10);
 	barData umLuz(100. / SLIDE_MAX, 0);
-	int dSlidePos = 16, lSlidePos = 16;
+	//int dSlidePos = 16, lSlidePos = 16;
+	int dSlidePos = 176, lSlidePos = 176;
 
 	// Initialization of Extended Kalman Filter
 	KalmanFilter KF(6, 5, 0);
 
 	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
+	// Camera calibration matrix
+	Mat K = 
+		(Mat_ < float >(3, 3) << 
+			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
+			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
+			0.0,							0.0,						1.0
+		);
+
+	Mat KI;
+	cv::invert(K, KI, cv::DECOMP_LU);
 
 	int index = 1;
 	float deltaT;
-	float deltaTOld;
+	float deltaTOld = 0;
+	float f = 1.3778036814997304e+03;
 
 	float X = 1;
 	float Y = 1;
@@ -348,7 +360,7 @@ int main(int argc, char** argv)
 	float YDer = 0;
 	float ZDer = 0;
 
-	float Rm = 0.08;
+	float Rm = 0.03;
 
 	// Initialization of measurement vector
 	Mat_ < float >measurement(5, 1);
@@ -392,6 +404,10 @@ int main(int argc, char** argv)
 
 	firstImage = true;
 	firstKalman = true;
+
+	float measurementXOld = measurement(2);
+	float measurementYOld = measurement(3);
+
 	for (;;)
 	{
 		// We capture an image, and validate that the operation worked
@@ -484,77 +500,125 @@ int main(int argc, char** argv)
 			}
 		}
 
-		
-
-		if (!firstKalman)
+		if (bestCircle.h != 0 && bestCircle.k != 0 && bestCircle.r != 0)
 		{
-			// First predict, to update the internal statePre variable
-			KF.statePre = KF.transitionMatrix * KF.statePost;
-			KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
+			if (!firstKalman)
+			{
+				// First predict, to update the internal statePre variable
+				KF.statePre = KF.transitionMatrix * KF.statePost;
+				KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
 
-			measurement(0) = bestCircle.h;
-			measurement(1) = bestCircle.k;
-			//measurement(2) = 
-			//measurement(3) =
-			measurement(4) = bestCircle.r;
+				X = KF.statePre.at < float >(0);
+				Y = KF.statePre.at < float >(1);
+				Z = KF.statePre.at < float >(2);
+				XDer = KF.statePre.at < float >(3);
+				YDer = KF.statePre.at < float >(4);
+				ZDer = KF.statePre.at < float >(5);
 
-			deltaT = times.at(index) - deltaTOld;
-			index++;
+				deltaT = times.at(index) - deltaTOld;
+				deltaTOld = times.at(index);
+
+				index++;
+
+				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
+				measurement(0) = temp.at< float >(0, 0);
+				measurement(1) = temp.at< float >(1, 0);
+				measurement(2) = (measurementXOld - measurement(0)) / deltaT;
+				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
+				measurement(4) = Z * bestCircle.r;
+
+				std::cout << Z * bestCircle.r << std::endl;
+
+				measurementXOld = measurement(0);
+				measurementYOld = measurement(1);
+
+				//std::cout << measurement << std::endl;
+			}
+			else
+			{
+				deltaT = 40;
+				deltaTOld = times.at(0);
+				// Convert h and k from pixels to meters
+				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
+
+				//std::cout << temp << std::endl;
+
+				X = temp.at< float >(0, 0);
+				Y = temp.at< float >(1, 0);
+				Z = Rm / bestCircle.r;
+
+				KF.statePre.at < float >(0) = X;
+				KF.statePre.at < float >(1) = Y;
+				KF.statePre.at < float >(2) = Z;
+			}
+
+			// Matrix A
+			KF.transitionMatrix =
+				(Mat_ < float >(6, 6) <<
+					1, 0, 0, deltaT, 0, 0, \
+					0, 1, 0, 0, deltaT, 0, \
+					0, 0, 1, 0, 0, deltaT, \
+					0, 0, 0, 1, 0, 0, \
+					0, 0, 0, 0, 1, 0, \
+					0, 0, 0, 0, 0, 1);
+
+			// std::cout << KF.transitionMatrix << std::endl;
+
+			// Jacobian of h(x)
+			KF.measurementMatrix =
+				(Mat_ < float >(5, 6) <<
+					1 / Z, 0, -X / pow(Z, 2), 0, 0, 0,
+					0, 1 / Z, -Y / pow(Z, 2), 0, 0, 0,
+					ZDer / pow(Z, 2), 0, (- XDer / pow(Z, 2)) - ((2 * X * ZDer) / pow(Z, 3)), 1 / Z, 0, X / pow(Z, 2),
+					0, ZDer / pow(Z, 2), (- YDer / pow(Z, 2)) - ((2 * Y * ZDer) / pow(Z, 3)), 0, 1 / Z, Y / pow(Z, 2),
+					0, 0, -Rm / pow(Z, 2), 0, 0, 0
+				);
+
+			// std::cout << KF.measurementMatrix << std::endl;
+
+			Mat h =
+				(Mat_ < float >(5, 1) <<
+					X/Z,
+					Y/Z,
+					(XDer + ((X / Z) * ZDer)) / Z,
+					(YDer + ((Y / Z) * ZDer)) / Z,
+					Rm / Z
+				);
+
+			// std::cout << h << std::endl;
+
+			// Update the state from the last measurement.
+			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
+			Mat inverse;
+			cv::invert(temp, inverse, cv::DECOMP_LU);
+			KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
+
+			KF.statePost = KF.statePre + KF.gain * (measurement - h);
+			//KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
+			KF.errorCovPost = (cv::Mat::eye(6, 6, CV_32F) - KF.gain * KF.measurementMatrix) * KF.errorCovPre;
+
+			// std::cout << KF.statePost << std::endl;
+
+			firstKalman = false;
+
+			// Convert X, Y and r from state to pixels
+			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0), KF.statePost.at<float>(1), 1);
+
+			float drawH = tempDraw.at<float>(0, 0);
+			float drawK = tempDraw.at<float>(1, 0);
+			float drawR = f * Rm / KF.statePost.at<float>(2);
+
+			cv::Mat filteredContourImage;
+			frame.copyTo(filteredContourImage);
+			cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
+			cv::circle(filteredContourImage, cv::Point(drawH, drawK), drawR, cv::Scalar(0, 255, 0), 2);
+			cv::imshow("FilteredCountours", filteredContourImage);
+			cv::imshow("Mascara", Mask);
 		}
-		else
-		{
-			deltaT = times.at(0);
-		}
-
-		// Matrix A
-		KF.transitionMatrix =
-			(Mat_ < float >(6, 6) <<
-				1, 0, 0, deltaT, 0, 0, \
-				0, 1, 0, 0, deltaT, 0, \
-				0, 0, 1, 0, 0, deltaT, \
-				0, 0, 0, 1, 0, 0, \
-				0, 0, 0, 0, 1, 0, \
-				0, 0, 0, 0, 0, 1);
-
-		X = KF.statePre.at < float >(0);
-		Y = KF.statePre.at < float >(1);
-		Z = KF.statePre.at < float >(2);
-		XDer = KF.statePre.at < float >(3);
-		YDer = KF.statePre.at < float >(4);
-		ZDer = KF.statePre.at < float >(5);
-
-		// Jacobian of h(x)
-		KF.measurementMatrix =
-			(Mat_ < float >(5, 6) <<
-				1/Z,			0,				-X/pow(Z,2),							0,		0,		0,
-				0,				1/Z,			-Y/pow(Z,2),							0,		0,		0,
-				ZDer/pow(Z,2),	0,				-XDer/pow(Z,2)-(2*X*ZDer)/pow(Z,3),		1/Z,	0,		X/pow(Z,2),
-				0,				ZDer/pow(Z,2),	-YDer/pow(Z,2)-(2*Y*ZDer)/pow(Z,3),		0,		1/Z,	Y/pow(Z,2),
-				0,				0,				-Rm/pow(Z,2),							0,		0,		0
-			);
-
-		// Update the state from the last measurement.
-		Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
-		Mat inverse;
-		cv::invert(temp, inverse, cv::DECOMP_LU);
-		KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
-
-		KF.statePost = KF.statePre + KF.gain * (measurement - KF.measurementMatrix * KF.statePre);
-		KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
-
-		firstKalman = false;
-		deltaT 
-
-		cv::Mat filteredContourImage;
-		frame.copyTo(filteredContourImage);
-		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
-		cv::imshow("FilteredCountours", filteredContourImage);
-		cv::imshow("Mascara", Mask);
 
 		// If the user presses a key, the loop ends
 		if (waitKeyEx(30) >= 0)
 			break;
-
 	}
 
 	cv::imwrite("LastFrame.png", frame);
