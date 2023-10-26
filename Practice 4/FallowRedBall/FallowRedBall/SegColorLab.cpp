@@ -466,7 +466,7 @@ int main(int argc, char** argv)
 		for (const std::vector<cv::Point> contour : contours)
 		{
 			// Rule out contours with too few or too many points
-			if (contour.size() >= 50 && contour.size() <= 350)
+			if (contour.size() >= 25 && contour.size() <= 400)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -500,7 +500,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		if (bestCircle.h != 0 && bestCircle.k != 0 && bestCircle.r != 0)
+		if (bestCircle.h != 0 || bestCircle.k != 0 || bestCircle.r != 0)
 		{
 			if (!firstKalman)
 			{
@@ -525,9 +525,9 @@ int main(int argc, char** argv)
 				measurement(1) = temp.at< float >(1, 0);
 				measurement(2) = (measurementXOld - measurement(0)) / deltaT;
 				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
-				measurement(4) = Z * bestCircle.r;
+				measurement(4) = (Z * bestCircle.r) / f;
 
-				std::cout << Z * bestCircle.r << std::endl;
+				std::cout << (Z * bestCircle.r) / f << std::endl;
 
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
@@ -620,8 +620,6 @@ int main(int argc, char** argv)
 		if (waitKeyEx(30) >= 0)
 			break;
 	}
-
-	cv::imwrite("LastFrame.png", frame);
 
 	// Close windows that were opened
 	cv::destroyWindow("Mascara");
