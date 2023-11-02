@@ -322,7 +322,7 @@ std::vector<int> readTimes(string path)
 
 int main(int argc, char** argv)
 {
-	Mat frame, fFrame, labFrame;
+	Mat frame, fFrame, labFrame, roi;
 	Mat Mask, Mean, Cov, iCov, M;
 	double iFact = 1. / 255.;
 	bool firstImage;
@@ -338,12 +338,20 @@ int main(int argc, char** argv)
 	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
 	// Camera calibration matrix
-	Mat K = 
+	/*Mat K =
 		(Mat_ < float >(3, 3) << 
 			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
 			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
 			0.0,							0.0,						1.0
 		);
+	*/
+
+	Mat K =
+		(Mat_ < float >(3, 3) <<
+			1111.111111111111, 0.0, 400.0,
+			0.0, 1111.111111111111, 300.0,
+			0.0, 0.0, 1.0
+			);
 
 	Mat KI;
 	cv::invert(K, KI, cv::DECOMP_LU);
@@ -380,7 +388,7 @@ int main(int argc, char** argv)
 	setIdentity(KF.errorCovPost, Scalar::all(.1));
 
 	// Read video
-	cv::VideoCapture cap("Resorces/Videos/PelotaVerde.mkv");
+	cv::VideoCapture cap("Resorces/Videos/GreeBallBlender25fpsTransparent.mkv");
 
 	// check if we succeeded
 	if (!cap.isOpened())				
@@ -405,8 +413,13 @@ int main(int argc, char** argv)
 	firstImage = true;
 	firstKalman = true;
 
-	float measurementXOld = measurement(2);
-	float measurementYOld = measurement(3);
+	float measurementXOld = measurement(0);
+	float measurementYOld = measurement(1);
+
+	Mat oldState = KF.statePost;
+	int newSquareX = 0;
+	int newSquareY = 0;
+	int squareSize = 50;
 
 	for (;;)
 	{
@@ -414,6 +427,9 @@ int main(int argc, char** argv)
 		cap >> frame;
 		if (frame.empty())
 			break;
+
+		//if (!roi.empty())
+			//roi.copyTo(frame);
 
 		frame.convertTo(fFrame, CV_32FC3);
 
@@ -431,7 +447,7 @@ int main(int argc, char** argv)
 
 			// Calculates the color model based on the uploaded image
 			// cFrame = imread (argv[2]);
-			cFrame = imread("Resorces/Images/ColorVerde.png");
+			cFrame = imread("Resorces/Images/GreenBallBayesColorSmooth.png");
 			cFrame.convertTo(fFrame, CV_32FC3);
 			fFrame *= iFact;
 			cvtColor(fFrame, labFrame, COLOR_BGR2Lab);
@@ -455,7 +471,6 @@ int main(int argc, char** argv)
 
 		// Draw contours on image and show the resulting image
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
-		cv::imshow("Countours", contourImage);
 
 		std::vector<std::vector<cv::Point>> filteredContours;
 		Circle tempCircle;
@@ -466,7 +481,7 @@ int main(int argc, char** argv)
 		for (const std::vector<cv::Point> contour : contours)
 		{
 			// Rule out contours with too few or too many points
-			if (contour.size() >= 50 && contour.size() <= 350)
+			if (contour.size() >= 20 /* && contour.size() <= 350*/)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -479,10 +494,15 @@ int main(int argc, char** argv)
 
 				// Apply RansacFit to find out if contour belongs to a circle or not
 				tempCircle = Circle(fixedContour);
-				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
+				Circle asd = Circle(fixedContour);
+				float tempError = asd.ransacFit(fixedContour, nInl, w, sigma, p);
 
+				if (tempCircle.r != 0)
+					std::cout << tempCircle.r << std::endl;
+				else
+					std::cout << tempCircle.r << std::endl;
 				// Make shure that the contour saved is the one with lesser error
-				if (tempError < smallestError)
+				if (tempCircle.r != 0 && tempError < smallestError)
 				{
 					bestCircle = tempCircle;
 					smallestError = tempError;
@@ -504,8 +524,29 @@ int main(int argc, char** argv)
 		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 
-		if (bestCircle.h != 0 || bestCircle.k != 0 || bestCircle.r != 0)
+		if (bestCircle.r != 0)
 		{
+			// Draw square where we will look for the ball on the next iteration.
+			newSquareX = bestCircle.h - bestCircle.r - (squareSize / 2);
+			newSquareY = bestCircle.k - bestCircle.r - (squareSize / 2);
+
+			if (newSquareX < 0)
+				newSquareX = 0;
+
+			if (newSquareY < 0)
+				newSquareY = 0;
+
+			cv::rectangle(filteredContourImage, Point(newSquareX, newSquareY), 
+				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
+
+			cv::rectangle(contourImage, Point(newSquareX, newSquareY),
+				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
+
+			cv::Rect roi_rect(newSquareX, newSquareY,squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
+			roi = frame(roi_rect);
+
+			cv::imshow("ROI", roi);
+
 			if (!firstKalman)
 			{
 				// First predict, to update the internal statePre variable
@@ -535,8 +576,6 @@ int main(int argc, char** argv)
 
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
-
-				//std::cout << measurement << std::endl;
 			}
 			else
 			{
@@ -544,8 +583,6 @@ int main(int argc, char** argv)
 				deltaTOld = times.at(0);
 				// Convert h and k from pixels to meters
 				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
-
-				//std::cout << temp << std::endl;
 
 				X = temp.at< float >(0, 0);
 				Y = temp.at< float >(1, 0);
@@ -564,9 +601,8 @@ int main(int argc, char** argv)
 					0, 0, 1, 0, 0, deltaT, \
 					0, 0, 0, 1, 0, 0, \
 					0, 0, 0, 0, 1, 0, \
-					0, 0, 0, 0, 0, 1);
-
-			// std::cout << KF.transitionMatrix << std::endl;
+					0, 0, 0, 0, 0, 1
+				);
 
 			// Jacobian of h(x)
 			KF.measurementMatrix =
@@ -578,8 +614,6 @@ int main(int argc, char** argv)
 					0, 0, -Rm / pow(Z, 2), 0, 0, 0
 				);
 
-			// std::cout << KF.measurementMatrix << std::endl;
-
 			Mat h =
 				(Mat_ < float >(5, 1) <<
 					X/Z,
@@ -589,8 +623,6 @@ int main(int argc, char** argv)
 					Rm / Z
 				);
 
-			// std::cout << h << std::endl;
-
 			// Update the state from the last measurement.
 			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
 			Mat inverse;
@@ -598,12 +630,7 @@ int main(int argc, char** argv)
 			KF.gain = KF.errorCovPre * KF.measurementMatrix.t() * inverse;
 
 			KF.statePost = KF.statePre + KF.gain * (measurement - h);
-			//KF.errorCovPost = KF.errorCovPre - KF.gain * KF.measurementMatrix * KF.errorCovPre;
 			KF.errorCovPost = (cv::Mat::eye(6, 6, CV_32F) - KF.gain * KF.measurementMatrix) * KF.errorCovPre;
-
-			// std::cout << KF.statePost << std::endl;
-
-			firstKalman = false;
 
 			// Convert X, Y and r from state to pixels
 			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0), KF.statePost.at<float>(1), 1);
@@ -613,8 +640,13 @@ int main(int argc, char** argv)
 			float drawR = f * Rm / KF.statePost.at<float>(2);
 
 			cv::circle(filteredContourImage, cv::Point(drawH, drawK), drawR, cv::Scalar(0, 255, 0), 2);
+
+			firstKalman = false;
+			oldState = KF.statePost;
 		}
 
+		cv::circle(contourImage, cv::Point(bestCircle.h, bestCircle.k), bestCircle.r, cv::Scalar(0, 255, 0), 2);
+		cv::imshow("Countours", contourImage);
 		cv::imshow("FilteredCountours", filteredContourImage);
 		cv::imshow("Mascara", Mask);
 

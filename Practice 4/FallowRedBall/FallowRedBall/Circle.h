@@ -115,7 +115,7 @@ struct Circle
         \param float p The probability that the points used to define the circle is outlier-free.
         \return The error, defined as the average of the minimum distance between the points use to define the circle, and the circle found. 
     */
-    float ransacFit(std::vector <Point3s> &pts, unsigned int &nInl, float w, float sigma = 1, float p=0.99);
+    float ransacFit(std::vector <Point3s> &pts, unsigned int &nInl, float w, float sigma = 1, float p=0.99, float kThr = 0.);
     
     /*!
         \func float distMin(Point3s &p)

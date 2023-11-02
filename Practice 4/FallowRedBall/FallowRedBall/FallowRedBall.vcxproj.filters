@@ -70,6 +70,15 @@
     <Image Include="Resorces\Images\ColorVerde2.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
+    <Image Include="Resorces\Images\GreenBallBayesColor.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
+    <Image Include="Resorces\Images\GreenBallBayesColorSmooth.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
+    <Image Include="Resorces\Images\GreenBallBayesColorSmooth2.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resorces\Data\TiemposAm.dat">
@@ -88,6 +97,21 @@
       <Filter>Archivos de recursos\Videos</Filter>
     </None>
     <None Include="Resorces\Videos\PelotaVerde.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\GreeBallBlender.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\GreeBallBlender2.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\GreeBallBlender3.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\GreeBallBlender25fps.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\GreeBallBlender25fpsTransparent.mkv">
       <Filter>Archivos de recursos\Videos</Filter>
     </None>
   </ItemGroup>

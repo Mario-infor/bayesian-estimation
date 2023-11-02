@@ -180,7 +180,8 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
         for (++it; it + 1 != end; it++)
         {
             K = computeCurvature(*(it - 1), *(it), *(it + 1));
-            if (!kThr || fabs(r * K - 1) < kThr)
+            float temp = fabs(r * K - 1);
+            if (!kThr || temp < kThr)
             {
                 //if (kThr)
                   //  cout << "K:" << K << endl;
@@ -198,7 +199,8 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
         }
         //Deal with the last one.
         K = computeCurvature(*(it - 1), *(it), pts[0]);
-        if (!kThr || fabs(r * K - 1) < kThr)
+        float temp = fabs(r * K - 1);
+        if (!kThr || temp < kThr)
         {
             //if (kThr)
               //  cout << "K:" << K << endl;
@@ -220,7 +222,7 @@ void Circle::selectAndTestSample(vector <Point3s>& pts, float thr, unsigned int&
 
 // \var p  Es la probabilidad de que un inlier sea una inliers. (p=0.99)
 // \var w  Es la proporcion de inliers vs outliers.
-float Circle::ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, float sigma, float p)
+float Circle::ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, float sigma, float p, float kThr)
 {
     float error, thr = 3.84* sigma;
     unsigned int i, j, l, N, T, nInliers, nOutliers, best;
@@ -228,7 +230,7 @@ float Circle::ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, floa
     vector<Point3s>::iterator itIn, endIn;
 
     //srand48(time(0));
-    long seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    //long seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
     l=pts.size();
     if (l<3)
@@ -243,7 +245,7 @@ float Circle::ransacFit(vector <Point3s> &pts, unsigned int &nInl, float w, floa
     bestInl = new unsigned int[l];
     for (i=0;i<N;++i)
     {
-        selectAndTestSample(pts, thr, nInliers, nOutliers, seed);
+        selectAndTestSample(pts, thr, nInliers, nOutliers, kThr);
         if (nInliers > best)
         {
             best = nInliers;
