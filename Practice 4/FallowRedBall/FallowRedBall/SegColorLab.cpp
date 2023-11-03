@@ -338,20 +338,20 @@ int main(int argc, char** argv)
 	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
 
 	// Camera calibration matrix
-	/*Mat K =
+	Mat K =
 		(Mat_ < float >(3, 3) << 
 			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
 			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
 			0.0,							0.0,						1.0
 		);
-	*/
 
-	Mat K =
+	/*Mat K =
 		(Mat_ < float >(3, 3) <<
 			1111.111111111111, 0.0, 400.0,
 			0.0, 1111.111111111111, 300.0,
 			0.0, 0.0, 1.0
 			);
+	*/
 
 	Mat KI;
 	cv::invert(K, KI, cv::DECOMP_LU);
@@ -388,7 +388,7 @@ int main(int argc, char** argv)
 	setIdentity(KF.errorCovPost, Scalar::all(.1));
 
 	// Read video
-	cv::VideoCapture cap("Resorces/Videos/GreeBallBlender25fpsTransparent.mkv");
+	cv::VideoCapture cap("Resorces/Videos/PelotaVerde.mkv");
 
 	// check if we succeeded
 	if (!cap.isOpened())				
@@ -416,6 +416,7 @@ int main(int argc, char** argv)
 	float measurementXOld = measurement(0);
 	float measurementYOld = measurement(1);
 
+	Mat frameCopy;
 	Mat oldState = KF.statePost;
 	int newSquareX = 0;
 	int newSquareY = 0;
@@ -427,9 +428,17 @@ int main(int argc, char** argv)
 		cap >> frame;
 		if (frame.empty())
 			break;
+		else
+			frame.copyTo(frameCopy);
 
-		//if (!roi.empty())
-			//roi.copyTo(frame);
+
+		if (!roi.empty())
+		{
+			frame.copyTo(frameCopy);
+			roi.copyTo(frame);
+			Size sz(frame.cols, frame.rows);
+			Mask = Mat::ones(sz, CV_8U);
+		}
 
 		frame.convertTo(fFrame, CV_32FC3);
 
@@ -447,7 +456,7 @@ int main(int argc, char** argv)
 
 			// Calculates the color model based on the uploaded image
 			// cFrame = imread (argv[2]);
-			cFrame = imread("Resorces/Images/GreenBallBayesColorSmooth.png");
+			cFrame = imread("Resorces/Images/ColorVerde.png");
 			cFrame.convertTo(fFrame, CV_32FC3);
 			fFrame *= iFact;
 			cvtColor(fFrame, labFrame, COLOR_BGR2Lab);
@@ -464,10 +473,11 @@ int main(int argc, char** argv)
 
 		// Find all contours in the image
 		std::vector<std::vector<cv::Point>> contours;
+		cv::imshow("Mascara", Mask);
 		cv::findContours(Mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		cv::Mat contourImage;
-		frame.copyTo(contourImage);
+		frameCopy.copyTo(contourImage);
 
 		// Draw contours on image and show the resulting image
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
@@ -481,7 +491,7 @@ int main(int argc, char** argv)
 		for (const std::vector<cv::Point> contour : contours)
 		{
 			// Rule out contours with too few or too many points
-			if (contour.size() >= 20 /* && contour.size() <= 350*/)
+			if (contour.size() >= 50 /* && contour.size() <= 350*/)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -494,13 +504,11 @@ int main(int argc, char** argv)
 
 				// Apply RansacFit to find out if contour belongs to a circle or not
 				tempCircle = Circle(fixedContour);
-				Circle asd = Circle(fixedContour);
-				float tempError = asd.ransacFit(fixedContour, nInl, w, sigma, p);
+				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
-				if (tempCircle.r != 0)
-					std::cout << tempCircle.r << std::endl;
-				else
-					std::cout << tempCircle.r << std::endl;
+				if(tempError != -1)
+					cv::circle(contourImage, cv::Point(tempCircle.h, tempCircle.k), tempCircle.r, cv::Scalar(0, 255, 0), 2);
+
 				// Make shure that the contour saved is the one with lesser error
 				if (tempCircle.r != 0 && tempError < smallestError)
 				{
@@ -521,7 +529,7 @@ int main(int argc, char** argv)
 		}
 
 		cv::Mat filteredContourImage;
-		frame.copyTo(filteredContourImage);
+		frameCopy.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 
 		if (bestCircle.r != 0)
@@ -539,12 +547,8 @@ int main(int argc, char** argv)
 			cv::rectangle(filteredContourImage, Point(newSquareX, newSquareY), 
 				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
 
-			cv::rectangle(contourImage, Point(newSquareX, newSquareY),
-				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
-
 			cv::Rect roi_rect(newSquareX, newSquareY,squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
-			roi = frame(roi_rect);
-
+			roi = frameCopy(roi_rect);
 			cv::imshow("ROI", roi);
 
 			if (!firstKalman)
@@ -560,8 +564,9 @@ int main(int argc, char** argv)
 				YDer = KF.statePre.at < float >(4);
 				ZDer = KF.statePre.at < float >(5);
 
-				deltaT = times.at(index) - deltaTOld;
-				deltaTOld = times.at(index);
+				deltaT = 40;
+				//deltaT = times.at(index) - deltaTOld;
+				//deltaTOld = times.at(index);
 
 				index++;
 
@@ -645,7 +650,7 @@ int main(int argc, char** argv)
 			oldState = KF.statePost;
 		}
 
-		cv::circle(contourImage, cv::Point(bestCircle.h, bestCircle.k), bestCircle.r, cv::Scalar(0, 255, 0), 2);
+		
 		cv::imshow("Countours", contourImage);
 		cv::imshow("FilteredCountours", filteredContourImage);
 		cv::imshow("Mascara", Mask);
