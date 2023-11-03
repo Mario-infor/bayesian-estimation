@@ -416,11 +416,11 @@ int main(int argc, char** argv)
 	float measurementXOld = measurement(0);
 	float measurementYOld = measurement(1);
 
-	Mat frameCopy;
 	Mat roiMask;
 	Mat result;
+	Rect roiRectCopy;
 	Mat oldState = KF.statePost;
-	cv::Rect roiRectCopy;
+
 	int newSquareX = 0;
 	int newSquareY = 0;
 	int squareSize = 50;
@@ -431,11 +431,8 @@ int main(int argc, char** argv)
 		cap >> frame;
 		if (frame.empty())
 			break;
-		//else
-			//frame.copyTo(frameCopy);
 
-
-		if (!roi.empty())
+		if (!roiRectCopy.empty())
 		{
 			roiMask = cv::Mat::zeros(frame.size(), CV_8U);
 			cv::rectangle(roiMask, roiRectCopy, cv::Scalar(255), FILLED);
@@ -443,10 +440,6 @@ int main(int argc, char** argv)
 			frame.copyTo(result, roiMask);
 			cv::imshow("Result", result);
 			result.copyTo(frame);
-			//frame.copyTo(frameCopy);
-			//roi.copyTo(frame);
-			//Size sz(frame.cols, frame.rows);
-			//Mask = Mat::ones(sz, CV_8U);
 		}
 
 		frame.convertTo(fFrame, CV_32FC3);
@@ -500,7 +493,7 @@ int main(int argc, char** argv)
 		for (const std::vector<cv::Point> contour : contours)
 		{
 			// Rule out contours with too few or too many points
-			if (contour.size() >= 50 /* && contour.size() <= 350*/)
+			if (contour.size() >= 50)
 			{
 				std::vector<Point3s> fixedContour;
 				unsigned int nInl;
@@ -515,6 +508,7 @@ int main(int argc, char** argv)
 				tempCircle = Circle(fixedContour);
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
+				// Draw temp circle on countour image.
 				if(tempError != -1)
 					cv::circle(contourImage, cv::Point(tempCircle.h, tempCircle.k), tempCircle.r, cv::Scalar(0, 255, 0), 2);
 
@@ -558,8 +552,6 @@ int main(int argc, char** argv)
 
 			cv::Rect roi_rect(newSquareX, newSquareY,squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
 			roiRectCopy = roi_rect;
-			roi = frame(roi_rect);
-			cv::imshow("ROI", roi);
 
 			if (!firstKalman)
 			{
@@ -574,9 +566,9 @@ int main(int argc, char** argv)
 				YDer = KF.statePre.at < float >(4);
 				ZDer = KF.statePre.at < float >(5);
 
-				deltaT = 40;
-				//deltaT = times.at(index) - deltaTOld;
-				//deltaTOld = times.at(index);
+				//deltaT = 40;
+				deltaT = times.at(index) - deltaTOld;
+				deltaTOld = times.at(index);
 
 				index++;
 
@@ -659,7 +651,6 @@ int main(int argc, char** argv)
 			firstKalman = false;
 			oldState = KF.statePost;
 		}
-
 		
 		cv::imshow("Countours", contourImage);
 		cv::imshow("FilteredCountours", filteredContourImage);
