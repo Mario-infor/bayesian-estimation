@@ -417,7 +417,10 @@ int main(int argc, char** argv)
 	float measurementYOld = measurement(1);
 
 	Mat frameCopy;
+	Mat roiMask;
+	Mat result;
 	Mat oldState = KF.statePost;
+	cv::Rect roiRectCopy;
 	int newSquareX = 0;
 	int newSquareY = 0;
 	int squareSize = 50;
@@ -428,16 +431,22 @@ int main(int argc, char** argv)
 		cap >> frame;
 		if (frame.empty())
 			break;
-		else
-			frame.copyTo(frameCopy);
+		//else
+			//frame.copyTo(frameCopy);
 
 
 		if (!roi.empty())
 		{
-			frame.copyTo(frameCopy);
-			roi.copyTo(frame);
-			Size sz(frame.cols, frame.rows);
-			Mask = Mat::ones(sz, CV_8U);
+			roiMask = cv::Mat::zeros(frame.size(), CV_8U);
+			cv::rectangle(roiMask, roiRectCopy, cv::Scalar(255), FILLED);
+			result = cv::Mat::zeros(frame.size(), CV_8U);
+			frame.copyTo(result, roiMask);
+			cv::imshow("Result", result);
+			result.copyTo(frame);
+			//frame.copyTo(frameCopy);
+			//roi.copyTo(frame);
+			//Size sz(frame.cols, frame.rows);
+			//Mask = Mat::ones(sz, CV_8U);
 		}
 
 		frame.convertTo(fFrame, CV_32FC3);
@@ -477,7 +486,7 @@ int main(int argc, char** argv)
 		cv::findContours(Mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		cv::Mat contourImage;
-		frameCopy.copyTo(contourImage);
+		frame.copyTo(contourImage);
 
 		// Draw contours on image and show the resulting image
 		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
@@ -529,7 +538,7 @@ int main(int argc, char** argv)
 		}
 
 		cv::Mat filteredContourImage;
-		frameCopy.copyTo(filteredContourImage);
+		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
 
 		if (bestCircle.r != 0)
@@ -548,7 +557,8 @@ int main(int argc, char** argv)
 				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
 
 			cv::Rect roi_rect(newSquareX, newSquareY,squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
-			roi = frameCopy(roi_rect);
+			roiRectCopy = roi_rect;
+			roi = frame(roi_rect);
 			cv::imshow("ROI", roi);
 
 			if (!firstKalman)
