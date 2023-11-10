@@ -140,33 +140,23 @@
     <ClInclude Include="Circle.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resorces\Images\ColorNaranja.png" />
-    <Image Include="Resorces\Images\ColorNaranjaClaro.png" />
     <Image Include="Resorces\Images\ColorVerde.png" />
-    <Image Include="Resorces\Images\ColorVerde2.png" />
     <Image Include="Resorces\Images\GreenBallBayesColor.png" />
     <Image Include="Resorces\Images\GreenBallBayesColorSmooth.png" />
     <Image Include="Resorces\Images\GreenBallBayesColorSmooth2.png" />
-    <Image Include="Resorces\Images\LastFrame.png" />
-    <Image Include="Resorces\Images\MascaraAmarilla.png" />
-    <Image Include="Resorces\Images\MascaraRoja.png" />
-    <Image Include="Resorces\Images\MascaraVerde.png" />
-    <Image Include="Resorces\Images\ModeloAmarillo.png" />
-    <Image Include="Resorces\Images\ModeloRojo.png" />
-    <Image Include="Resorces\Images\ModeloVerde.png" />
+    <Image Include="Resorces\Images\OrangeBallDayan.png" />
+    <Image Include="Resorces\Images\RedBallMario.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resorces\Data\TiemposAm.dat" />
-    <None Include="Resorces\Data\TiemposRo.dat" />
-    <None Include="Resorces\Data\TiemposVe.dat" />
-    <None Include="Resorces\Videos\GreeBallBlender.mkv" />
-    <None Include="Resorces\Videos\GreeBallBlender2.mkv" />
     <None Include="Resorces\Videos\GreeBallBlender25fps.mkv" />
     <None Include="Resorces\Videos\GreeBallBlender25fpsTransparent.mkv" />
-    <None Include="Resorces\Videos\GreeBallBlender3.mkv" />
-    <None Include="Resorces\Videos\PelotaAmarilla.mkv" />
-    <None Include="Resorces\Videos\PelotaRoja.mkv" />
+    <None Include="Resorces\Videos\PelotaNaranjaDayan.mkv" />
+    <None Include="Resorces\Videos\PelotaRojaMario.mkv" />
     <None Include="Resorces\Videos\PelotaVerde.mkv" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Resorces\Data\TiemposNaranja.txt" />
+    <Text Include="Resorces\Data\TiemposRoja.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -37,37 +37,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resorces\Images\ColorNaranja.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\ColorNaranjaClaro.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\LastFrame.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\MascaraAmarilla.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\MascaraRoja.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\MascaraVerde.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\ModeloAmarillo.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\ModeloRojo.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\ModeloVerde.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
     <Image Include="Resorces\Images\ColorVerde.png">
-      <Filter>Archivos de recursos\Images</Filter>
-    </Image>
-    <Image Include="Resorces\Images\ColorVerde2.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
     <Image Include="Resorces\Images\GreenBallBayesColor.png">
@@ -79,33 +49,15 @@
     <Image Include="Resorces\Images\GreenBallBayesColorSmooth2.png">
       <Filter>Archivos de recursos\Images</Filter>
     </Image>
+    <Image Include="Resorces\Images\RedBallMario.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
+    <Image Include="Resorces\Images\OrangeBallDayan.png">
+      <Filter>Archivos de recursos\Images</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resorces\Data\TiemposAm.dat">
-      <Filter>Archivos de recursos\Data</Filter>
-    </None>
-    <None Include="Resorces\Data\TiemposRo.dat">
-      <Filter>Archivos de recursos\Data</Filter>
-    </None>
-    <None Include="Resorces\Data\TiemposVe.dat">
-      <Filter>Archivos de recursos\Data</Filter>
-    </None>
-    <None Include="Resorces\Videos\PelotaAmarilla.mkv">
-      <Filter>Archivos de recursos\Videos</Filter>
-    </None>
-    <None Include="Resorces\Videos\PelotaRoja.mkv">
-      <Filter>Archivos de recursos\Videos</Filter>
-    </None>
     <None Include="Resorces\Videos\PelotaVerde.mkv">
-      <Filter>Archivos de recursos\Videos</Filter>
-    </None>
-    <None Include="Resorces\Videos\GreeBallBlender.mkv">
-      <Filter>Archivos de recursos\Videos</Filter>
-    </None>
-    <None Include="Resorces\Videos\GreeBallBlender2.mkv">
-      <Filter>Archivos de recursos\Videos</Filter>
-    </None>
-    <None Include="Resorces\Videos\GreeBallBlender3.mkv">
       <Filter>Archivos de recursos\Videos</Filter>
     </None>
     <None Include="Resorces\Videos\GreeBallBlender25fps.mkv">
@@ -114,5 +66,19 @@
     <None Include="Resorces\Videos\GreeBallBlender25fpsTransparent.mkv">
       <Filter>Archivos de recursos\Videos</Filter>
     </None>
+    <None Include="Resorces\Videos\PelotaRojaMario.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+    <None Include="Resorces\Videos\PelotaNaranjaDayan.mkv">
+      <Filter>Archivos de recursos\Videos</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Resorces\Data\TiemposRoja.txt">
+      <Filter>Archivos de recursos\Data</Filter>
+    </Text>
+    <Text Include="Resorces\Data\TiemposNaranja.txt">
+      <Filter>Archivos de recursos\Data</Filter>
+    </Text>
   </ItemGroup>
 </Project>

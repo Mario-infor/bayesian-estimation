@@ -335,15 +335,23 @@ int main(int argc, char** argv)
 	// Initialization of Extended Kalman Filter
 	KalmanFilter KF(6, 5, 0);
 
-	std::vector<int> times = readTimes("Resorces/Data/TiemposVe.dat");
+	std::vector<int> times = readTimes("Resorces/Data/TiemposNaranja.txt");
 
 	// Camera calibration matrix
-	Mat K =
+	/*Mat K =
 		(Mat_ < float >(3, 3) << 
 			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
 			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
 			0.0,							0.0,						1.0
 		);
+	*/
+
+	Mat K =
+		(Mat_ < float >(3, 3) <<
+			7.7318146334666767e+02, 0.0, 4.0726293453767408e+02,
+			0.0, 7.7318146334666767e+02, 3.0623163696686174e+02,
+			0.0, 0.0, 1.0
+			);
 
 	/*Mat K =
 		(Mat_ < float >(3, 3) <<
@@ -359,7 +367,7 @@ int main(int argc, char** argv)
 	int index = 1;
 	float deltaT;
 	float deltaTOld = 0;
-	float f = 1.3778036814997304e+03;
+	float f = 7.7318146334666767e+02;
 
 	float X = 1;
 	float Y = 1;
@@ -368,7 +376,7 @@ int main(int argc, char** argv)
 	float YDer = 0;
 	float ZDer = 0;
 
-	float Rm = 0.03;
+	float Rm = 0.0199;
 
 	// Initialization of measurement vector
 	Mat_ < float >measurement(5, 1);
@@ -384,11 +392,12 @@ int main(int argc, char** argv)
 
 	// Initialize the noise matrix
 	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
-	setIdentity(KF.measurementNoiseCov, Scalar::all(10));
+	setIdentity(KF.measurementNoiseCov, Scalar::all(1));
 	setIdentity(KF.errorCovPost, Scalar::all(.1));
 
 	// Read video
-	cv::VideoCapture cap("Resorces/Videos/PelotaVerde.mkv");
+	//cv::VideoCapture cap("Resorces/Videos/GreeBallBlender25fpsTransparent.mkv");
+	cv::VideoCapture cap("Resorces/Videos/PelotaNaranjaDayan.mkv");
 
 	// check if we succeeded
 	if (!cap.isOpened())				
@@ -458,7 +467,7 @@ int main(int argc, char** argv)
 
 			// Calculates the color model based on the uploaded image
 			// cFrame = imread (argv[2]);
-			cFrame = imread("Resorces/Images/ColorVerde.png");
+			cFrame = imread("Resorces/Images/OrangeBallDayan.png");
 			cFrame.convertTo(fFrame, CV_32FC3);
 			fFrame *= iFact;
 			cvtColor(fFrame, labFrame, COLOR_BGR2Lab);
@@ -646,8 +655,15 @@ int main(int argc, char** argv)
 			float drawK = tempDraw.at<float>(1, 0);
 			float drawR = f * Rm / KF.statePost.at<float>(2);
 
-			cv::circle(filteredContourImage, cv::Point(drawH, drawK), drawR, cv::Scalar(0, 255, 0), 2);
-
+			try
+			{
+				cv::circle(filteredContourImage, cv::Point(drawH, drawK), drawR, cv::Scalar(0, 255, 0), 2);
+			}
+			catch (const std::exception&)
+			{
+				std::cout << "Could not draw the circle.";
+			}
+			
 			firstKalman = false;
 			oldState = KF.statePost;
 		}
