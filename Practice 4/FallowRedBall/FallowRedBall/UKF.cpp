@@ -321,40 +321,40 @@ std::vector<int> readTimes(string path)
 	return data;
 }
 
-int main(int argc, char** argv)
-{
-	cv::Mat A = (cv::Mat_<float>(2, 2) << 4, 1, 2, 9);
+// Calculate the square root of a matrix.
+cv::Mat sqrtMat(int n, float lambda, Mat matrix) 
+{	
+	matrix = (n + lambda) * matrix;
 
-	// Calcular la raíz cuadrada de la matriz
-	cv::Mat sqrtA;
-	cv::sqrt(A, sqrtA);
+	// Convert a Mat into a Eigen matrix using the constructor.
+	Eigen::MatrixXf sqrtCovMatrix(matrix.rows, matrix.cols);
 
-	// Imprimir la matriz original y su raíz cuadrada
-	std::cout << "Matriz original:\n" << A << "\n\n";
-	std::cout << "Raíz cuadrada de la matriz:\n" << sqrtA << "\n";
+	// Pass data into the Eigen matrix.
+	for (int i = 0; i < matrix.rows; i++)
+		for (int j = 0; j < matrix.cols; j++)
+			sqrtCovMatrix(i, j) = matrix.at<float>(i, j);
 
-	// Definir una matriz simétrica y definida positiva
-	Eigen::MatrixXd AE(3, 3);
-	AE << 4, 12, -16,
-		12, 37, -43,
-		-16, -43, 98;
+	// Calculate Cholesky decomposition.
+	Eigen::LLT<Eigen::MatrixXd> lltOfA(sqrtCovMatrix);
 
-	// Calcular la descomposición de Cholesky
-	Eigen::LLT<Eigen::MatrixXd> lltOfA(AE);
-
-	// Verificar si la descomposición tuvo éxito
+	Eigen::MatrixXd L;
+	// Check if the decomposition was successful.
 	if (lltOfA.info() == Eigen::Success) {
-		// Obtener la matriz triangular inferior L de la descomposición de Cholesky
-		Eigen::MatrixXd L = lltOfA.matrixL();
-
-		// Imprimir la matriz original y la matriz triangular inferior
-		std::cout << "Matriz original:\n" << AE << "\n\n";
-		std::cout << "Matriz triangular inferior (Cholesky L):\n" << L << "\n";
+		// Obtain the lower triangular matrix L from the Cholesky decomposition.
+		L = lltOfA.matrixL();
 	}
 	else {
-		std::cerr << "La descomposición de Cholesky no fue exitosa." << std::endl;
+		std::cerr << "Cholesky's decomposition was not successful." << std::endl;
 	}
 
+	// Convert a matrix from Eigen library to opencv.
+	Mat cvMatrix(L.rows(), L.cols(), CV_64F, L.data());
+
+	return cvMatrix;
+}
+
+int main(int argc, char** argv)
+{
 	Mat frame, fFrame, labFrame, roi;
 	Mat Mask, Mean, Cov, iCov, M;
 	double iFact = 1. / 255.;
@@ -362,16 +362,15 @@ int main(int argc, char** argv)
 	bool firstKalman;
 	barData umDist(40. / SLIDE_MAX, 10);
 	barData umLuz(100. / SLIDE_MAX, 0);
-	//int dSlidePos = 16, lSlidePos = 16;
 	int dSlidePos = 176, lSlidePos = 176;
 
+	int n = 6;
 	// Initialization of Extended Kalman Filter
-	KalmanFilter KF(6, 5, 0);
+	KalmanFilter KF(n, 5, 0);
 
 	std::vector<int> times = readTimes("Resorces/Data/TiemposNaranja.txt");
 
 	// Camera calibration matrix
-
 	Mat K =
 		(Mat_ < float >(3, 3) <<
 			7.7318146334666767e+02, 0.0, 4.0726293453767408e+02,
@@ -379,13 +378,18 @@ int main(int argc, char** argv)
 			0.0, 0.0, 1.0
 			);
 
+	// Inverse of camera calibration matrix.
 	Mat KI;
 	cv::invert(K, KI, cv::DECOMP_LU);
 
 	int index = 1;
 	float deltaT;
 	float deltaTOld = 0;
-	float f = KI.at<float>(0, 0);
+
+	float k = 1;
+	float alpha = 1;
+	int beta = 2;
+	float lambda = (alpha * alpha) * (n + k) - n;
 
 	float X = 1;
 	float Y = 1;
@@ -605,8 +609,6 @@ int main(int argc, char** argv)
 				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
 				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 
-				std::cout << (Z * bestCircle.r) / f << std::endl;
-
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
 			}
@@ -656,7 +658,13 @@ int main(int argc, char** argv)
 					Rm / Z
 					);
 
+			// Calculate the square root of the error covariance matrix.
+			Mat sqrtmat = sqrtMat(KF.statePre.rows, lambda,KF.errorCovPre);
+			
 			// Update the state from the last measurement.
+			Mat SigmaZero = KF.statePost;
+
+
 			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
 			Mat inverse;
 			cv::invert(temp, inverse, cv::DECOMP_LU);
