@@ -309,7 +309,7 @@ std::vector<int> readTimes(string path)
 	std::vector<int> data;
 	std::ifstream file(path);
 
-	if (!file) 
+	if (!file)
 		std::cerr << "File not found." << std::endl;
 	else
 	{
@@ -347,8 +347,6 @@ int main(int argc, char** argv)
 		// Obtener la matriz triangular inferior L de la descomposición de Cholesky
 		Eigen::MatrixXd L = lltOfA.matrixL();
 
-		Mat chol = lltOfA.matrixL();
-
 		// Imprimir la matriz original y la matriz triangular inferior
 		std::cout << "Matriz original:\n" << AE << "\n\n";
 		std::cout << "Matriz triangular inferior (Cholesky L):\n" << L << "\n";
@@ -374,7 +372,7 @@ int main(int argc, char** argv)
 
 	// Camera calibration matrix
 	/*Mat K =
-		(Mat_ < float >(3, 3) << 
+		(Mat_ < float >(3, 3) <<
 			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
 			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
 			0.0,							0.0,						1.0
@@ -402,7 +400,7 @@ int main(int argc, char** argv)
 	int index = 1;
 	float deltaT;
 	float deltaTOld = 0;
-	float f = 7.7318146334666767e+02;
+	float f = KI.at<float>(0, 0);
 
 	float X = 1;
 	float Y = 1;
@@ -435,7 +433,7 @@ int main(int argc, char** argv)
 	cv::VideoCapture cap("Resorces/Videos/PelotaNaranjaDayan.mkv");
 
 	// check if we succeeded
-	if (!cap.isOpened())				
+	if (!cap.isOpened())
 		return -1;
 
 	// We define the size of the images to be captured
@@ -553,7 +551,7 @@ int main(int argc, char** argv)
 				float tempError = tempCircle.ransacFit(fixedContour, nInl, w, sigma, p);
 
 				// Draw temp circle on countour image.
-				if(tempError != -1)
+				if (tempError != -1)
 					cv::circle(contourImage, cv::Point(tempCircle.h, tempCircle.k), tempCircle.r, cv::Scalar(0, 255, 0), 2);
 
 				// Make shure that the contour saved is the one with lesser error
@@ -591,10 +589,10 @@ int main(int argc, char** argv)
 			if (newSquareY < 0)
 				newSquareY = 0;
 
-			cv::rectangle(filteredContourImage, Point(newSquareX, newSquareY), 
+			cv::rectangle(filteredContourImage, Point(newSquareX, newSquareY),
 				Point(newSquareX + bestCircle.r * 2 + squareSize, newSquareY + bestCircle.r * 2 + squareSize), Scalar(0, 255, 0), 2);
 
-			cv::Rect roi_rect(newSquareX, newSquareY,squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
+			cv::Rect roi_rect(newSquareX, newSquareY, squareSize + bestCircle.r * 2, squareSize + bestCircle.r * 2);
 			roiRectCopy = roi_rect;
 
 			if (!firstKalman)
@@ -622,7 +620,8 @@ int main(int argc, char** argv)
 				measurement(2) = (measurementXOld - measurement(0)) / deltaT;
 				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
 				// Multiplicar radio en pixeles por la f de la inversa
-				measurement(4) = (Z * bestCircle.r) / f;
+				//measurement(4) = (Z * bestCircle.r) / f;
+				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 
 				std::cout << (Z * bestCircle.r) / f << std::endl;
 
@@ -654,26 +653,26 @@ int main(int argc, char** argv)
 					0, 0, 0, 1, 0, 0, \
 					0, 0, 0, 0, 1, 0, \
 					0, 0, 0, 0, 0, 1
-				);
+					);
 
 			// Jacobian of h(x)
 			KF.measurementMatrix =
 				(Mat_ < float >(5, 6) <<
 					1 / Z, 0, -X / pow(Z, 2), 0, 0, 0,
 					0, 1 / Z, -Y / pow(Z, 2), 0, 0, 0,
-					ZDer / pow(Z, 2), 0, (- XDer / pow(Z, 2)) - ((2 * X * ZDer) / pow(Z, 3)), 1 / Z, 0, X / pow(Z, 2),
-					0, ZDer / pow(Z, 2), (- YDer / pow(Z, 2)) - ((2 * Y * ZDer) / pow(Z, 3)), 0, 1 / Z, Y / pow(Z, 2),
+					ZDer / pow(Z, 2), 0, (-XDer / pow(Z, 2)) - ((2 * X * ZDer) / pow(Z, 3)), 1 / Z, 0, X / pow(Z, 2),
+					0, ZDer / pow(Z, 2), (-YDer / pow(Z, 2)) - ((2 * Y * ZDer) / pow(Z, 3)), 0, 1 / Z, Y / pow(Z, 2),
 					0, 0, -Rm / pow(Z, 2), 0, 0, 0
-				);
+					);
 
 			Mat h =
 				(Mat_ < float >(5, 1) <<
-					X/Z,
-					Y/Z,
+					X / Z,
+					Y / Z,
 					(XDer + ((X / Z) * ZDer)) / Z,
 					(YDer + ((Y / Z) * ZDer)) / Z,
 					Rm / Z
-				);
+					);
 
 			// Update the state from the last measurement.
 			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
@@ -687,11 +686,12 @@ int main(int argc, char** argv)
 
 			// Dividir la X y la Y entre Z para llevar del estado a la medicion y luego premultiplicar por K.
 			// Convert X, Y and r from state to pixels
-			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0), KF.statePost.at<float>(1), 1);
+			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0) / Z, KF.statePost.at<float>(1) / Z, 1);
 
 			float drawH = tempDraw.at<float>(0, 0);
 			float drawK = tempDraw.at<float>(1, 0);
-			float drawR = f * Rm / KF.statePost.at<float>(2);
+			//float drawR = f * Rm / KF.statePost.at<float>(2);
+			float drawR = K.at<float>(0, 0) * (Rm / KF.statePost.at<float>(2));
 
 			try
 			{
@@ -701,11 +701,11 @@ int main(int argc, char** argv)
 			{
 				std::cout << "Could not draw the circle.";
 			}
-			
+
 			firstKalman = false;
 			oldState = KF.statePost;
 		}
-		
+
 		cv::imshow("Countours", contourImage);
 		cv::imshow("FilteredCountours", filteredContourImage);
 		cv::imshow("Mascara", Mask);
