@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Mario\Programacion\repositorios\bayesian-estimation\Practice 4\FallowRedBall\FallowRedBall\eigen;C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Mario\Programacion\EigenLibrary;C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,7 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Mario\Programacion\repositorios\bayesian-estimation\Practice 4\FallowRedBall\FallowRedBall\eigen;C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Mario\Programacion\EigenLibrary;C:\Mario\Programacion\OpenCV2\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,15 +142,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resorces\Images\ColorVerde.png" />
-    <Image Include="Resorces\Images\GreenBallBayesColor.png" />
-    <Image Include="Resorces\Images\GreenBallBayesColorSmooth.png" />
-    <Image Include="Resorces\Images\GreenBallBayesColorSmooth2.png" />
     <Image Include="Resorces\Images\OrangeBallDayan.png" />
     <Image Include="Resorces\Images\RedBallMario.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resorces\Videos\GreeBallBlender25fps.mkv" />
-    <None Include="Resorces\Videos\GreeBallBlender25fpsTransparent.mkv" />
     <None Include="Resorces\Videos\PelotaNaranjaDayan.mkv" />
     <None Include="Resorces\Videos\PelotaRojaMario.mkv" />
     <None Include="Resorces\Videos\PelotaVerde.mkv" />
