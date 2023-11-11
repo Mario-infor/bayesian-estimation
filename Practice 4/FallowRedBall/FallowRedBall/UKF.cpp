@@ -353,21 +353,20 @@ cv::Mat sqrtMat(Mat matrix)
 	return cvMatrix.t();
 }
 
-void sigmaPointsUpdateState(Mat statePre, Mat sqrtmat, float theta, Mat& SigmaZero, Mat& SigmaLeft, Mat& SigmaRight)
+// Calculate the sigma points.
+cv::Mat sigmaPointsUpdateState(Mat statePre, Mat sqrtmat, float theta)
 {
-	SigmaZero = statePre;
-	SigmaLeft = cv::Mat::zeros(sqrtmat.size(), CV_32F);
-	SigmaRight = cv::Mat::zeros(sqrtmat.size(), CV_32F);
+	Mat sigmaPoints = cv::Mat::zeros(statePre.rows, 2 * statePre.rows + 1, CV_32F);
+
+	sigmaPoints.col(0) = statePre;
 
 	for (size_t i = 0; i < statePre.rows; i++)
 	{
-		SigmaLeft.col(i) = statePre + theta * sqrtmat.col(i);
-		SigmaRight.col(i) = statePre - theta * sqrtmat.col(i);
-
-		std::cout << SigmaLeft << std::endl;
-		std::cout << std::endl;
-		std::cout << SigmaRight << std::endl;
+		sigmaPoints.col(i + 1) = statePre + theta * sqrtmat.col(i);
+		sigmaPoints.col(i + 1 + statePre.rows) = statePre - theta * sqrtmat.col(i);
 	}
+
+	return sigmaPoints;
 }
 
 int main(int argc, char** argv)
@@ -639,21 +638,10 @@ int main(int argc, char** argv)
 				// Calculate the square root of the error covariance matrix.
 				Mat sqrtmat = sqrtMat(KF.errorCovPre);
 
-				std::cout << "errorCovPre: " << KF.errorCovPre << std::endl;
+				// Calculate the sigma points.
+				Mat Sigmapoints = sigmaPointsUpdateState(KF.statePre, sqrtmat, theta);
 
-				// Print sqrtmat.
-				std::cout << "sqrtmat: " << sqrtmat << std::endl;
-
-
-				Mat SigmaZero;
-				Mat SigmaLeft;
-				Mat SigmaRight;
-
-				sigmaPointsUpdateState(KF.statePre, sqrtmat, theta, SigmaZero, SigmaLeft, SigmaRight);
-
-				std::cout << "SigmaZero: " << SigmaZero << std::endl;
-				std::cout << "SigmaLeft: " << SigmaLeft << std::endl;
-				std::cout << "SigmaRight: " << SigmaRight << std::endl;
+				std::cout << Sigmapoints << std::endl;
 			}
 			else
 			{
