@@ -371,13 +371,6 @@ int main(int argc, char** argv)
 	std::vector<int> times = readTimes("Resorces/Data/TiemposNaranja.txt");
 
 	// Camera calibration matrix
-	/*Mat K =
-		(Mat_ < float >(3, 3) <<
-			1.3778036814997304e+03,			0.0,						4.0002681782947193e+02,
-			0.0,							1.3778036814997304e+03,		3.00096061319675721e+02,
-			0.0,							0.0,						1.0
-		);
-	*/
 
 	Mat K =
 		(Mat_ < float >(3, 3) <<
@@ -385,14 +378,6 @@ int main(int argc, char** argv)
 			0.0, 7.7318146334666767e+02, 3.0623163696686174e+02,
 			0.0, 0.0, 1.0
 			);
-
-	/*Mat K =
-		(Mat_ < float >(3, 3) <<
-			1111.111111111111, 0.0, 400.0,
-			0.0, 1111.111111111111, 300.0,
-			0.0, 0.0, 1.0
-			);
-	*/
 
 	Mat KI;
 	cv::invert(K, KI, cv::DECOMP_LU);
@@ -608,7 +593,6 @@ int main(int argc, char** argv)
 				YDer = KF.statePre.at < float >(4);
 				ZDer = KF.statePre.at < float >(5);
 
-				//deltaT = 40;
 				deltaT = times.at(index) - deltaTOld;
 				deltaTOld = times.at(index);
 
@@ -619,8 +603,6 @@ int main(int argc, char** argv)
 				measurement(1) = temp.at< float >(1, 0);
 				measurement(2) = (measurementXOld - measurement(0)) / deltaT;
 				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
-				// Multiplicar radio en pixeles por la f de la inversa
-				//measurement(4) = (Z * bestCircle.r) / f;
 				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 
 				std::cout << (Z * bestCircle.r) / f << std::endl;
@@ -683,14 +665,11 @@ int main(int argc, char** argv)
 			KF.statePost = KF.statePre + KF.gain * (measurement - h);
 			KF.errorCovPost = (cv::Mat::eye(6, 6, CV_32F) - KF.gain * KF.measurementMatrix) * KF.errorCovPre;
 
-
-			// Dividir la X y la Y entre Z para llevar del estado a la medicion y luego premultiplicar por K.
 			// Convert X, Y and r from state to pixels
 			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0) / Z, KF.statePost.at<float>(1) / Z, 1);
 
 			float drawH = tempDraw.at<float>(0, 0);
 			float drawK = tempDraw.at<float>(1, 0);
-			//float drawR = f * Rm / KF.statePost.at<float>(2);
 			float drawR = K.at<float>(0, 0) * (Rm / KF.statePost.at<float>(2));
 
 			try
