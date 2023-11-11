@@ -369,6 +369,27 @@ cv::Mat sigmaPointsUpdateState(Mat statePre, Mat sqrtmat, float theta)
 	return sigmaPoints;
 }
 
+cv::Mat getH(Mat statePre, float Rm)
+{
+	float X = statePre.at < float >(0);
+	float Y = statePre.at < float >(1);
+	float Z = statePre.at < float >(2);
+	float XDer = statePre.at < float >(3);
+	float YDer = statePre.at < float >(4);
+	float ZDer = statePre.at < float >(5);
+
+	Mat h =
+		(Mat_ < float >(5, 1) << 
+						X / Z,
+						Y / Z,
+						(XDer + ((X / Z) * ZDer)) / Z,
+						(YDer + ((Y / Z) * ZDer)) / Z,
+						Rm / Z
+						);
+
+	return h;
+}
+
 int main(int argc, char** argv)
 {
 	Mat frame, fFrame, labFrame, roi;
@@ -414,12 +435,12 @@ int main(int argc, char** argv)
 	float w0c = w0m + (1 - alpha * alpha + beta);
 	float wi = 1 / (2 * (n + lambda));
 
-	float X = 1;
+	/*float X = 1;
 	float Y = 1;
 	float Z = 1;
 	float XDer = 0;
 	float YDer = 0;
-	float ZDer = 0;
+	float ZDer = 0;*/
 
 	float Rm = 0.0199;
 
@@ -428,12 +449,12 @@ int main(int argc, char** argv)
 	measurement.setTo(Scalar(0));
 
 	// Initialize the stateVector
-	KF.statePre.at < float >(0) = X;
-	KF.statePre.at < float >(1) = Y;
-	KF.statePre.at < float >(2) = Z;
-	KF.statePre.at < float >(3) = XDer;
-	KF.statePre.at < float >(4) = YDer;
-	KF.statePre.at < float >(5) = ZDer;
+	KF.statePre.at < float >(0) = 1;
+	KF.statePre.at < float >(1) = 1;
+	KF.statePre.at < float >(2) = 1;
+	KF.statePre.at < float >(3) = 0;
+	KF.statePre.at < float >(4) = 0;
+	KF.statePre.at < float >(5) = 0;
 
 	// Initialize the noise matrix
 	setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
@@ -613,12 +634,12 @@ int main(int argc, char** argv)
 				KF.statePre = KF.transitionMatrix * KF.statePost;
 				KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
 
-				X = KF.statePre.at < float >(0);
+				/*X = KF.statePre.at < float >(0);
 				Y = KF.statePre.at < float >(1);
 				Z = KF.statePre.at < float >(2);
 				XDer = KF.statePre.at < float >(3);
 				YDer = KF.statePre.at < float >(4);
-				ZDer = KF.statePre.at < float >(5);
+				ZDer = KF.statePre.at < float >(5);*/
 
 				deltaT = times.at(index) - deltaTOld;
 				deltaTOld = times.at(index);
@@ -650,17 +671,17 @@ int main(int argc, char** argv)
 				// Convert h and k from pixels to meters
 				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
 
-				X = temp.at< float >(0, 0);
+				/*X = temp.at< float >(0, 0);
 				Y = temp.at< float >(1, 0);
-				Z = Rm / bestCircle.r;
+				Z = Rm / bestCircle.r;*/
 
-				KF.statePre.at < float >(0) = X;
-				KF.statePre.at < float >(1) = Y;
-				KF.statePre.at < float >(2) = Z;
+				KF.statePre.at < float >(0) = temp.at< float >(0, 0);
+				KF.statePre.at < float >(1) = temp.at< float >(1, 0);
+				KF.statePre.at < float >(2) = Rm / bestCircle.r;
 			}
 
 			// Matrix A
-			KF.transitionMatrix =
+			/*KF.transitionMatrix =
 				(Mat_ < float >(6, 6) <<
 					1, 0, 0, deltaT, 0, 0, \
 					0, 1, 0, 0, deltaT, 0, \
@@ -668,17 +689,12 @@ int main(int argc, char** argv)
 					0, 0, 0, 1, 0, 0, \
 					0, 0, 0, 0, 1, 0, \
 					0, 0, 0, 0, 0, 1
-					);
+					);*/
 
 			// Matrix that relates de state vector with the measurement vector.
-			Mat h =
-				(Mat_ < float >(5, 1) <<
-					X / Z,
-					Y / Z,
-					(XDer + ((X / Z) * ZDer)) / Z,
-					(YDer + ((Y / Z) * ZDer)) / Z,
-					Rm / Z
-					);
+			Mat h = getH(KF.statePre, Rm);
+
+
 
 			// Update the state from the last measurement.
 			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
@@ -689,12 +705,17 @@ int main(int argc, char** argv)
 			KF.statePost = KF.statePre + KF.gain * (measurement - h);
 			KF.errorCovPost = (cv::Mat::eye(6, 6, CV_32F) - KF.gain * KF.measurementMatrix) * KF.errorCovPre;
 
+			// Draw predicted circle.
 			// Convert X, Y and r from state to pixels
-			Mat tempDraw = K * (Mat_ <float>(3, 1) << KF.statePost.at<float>(0) / Z, KF.statePost.at<float>(1) / Z, 1);
+			float X = KF.statePost.at<float>(0);
+			float Y = KF.statePost.at<float>(1);
+			float Z = KF.statePost.at<float>(2);
+
+			Mat tempDraw = K * (Mat_ <float>(3, 1) << X / Z, Y / Z, 1);
 
 			float drawH = tempDraw.at<float>(0, 0);
 			float drawK = tempDraw.at<float>(1, 0);
-			float drawR = K.at<float>(0, 0) * (Rm / KF.statePost.at<float>(2));
+			float drawR = K.at<float>(0, 0) * (Rm / Z);
 
 			try
 			{
