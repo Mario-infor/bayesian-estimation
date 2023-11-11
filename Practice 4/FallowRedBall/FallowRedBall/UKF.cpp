@@ -322,9 +322,9 @@ std::vector<int> readTimes(string path)
 }
 
 // Calculate the square root of a matrix.
-cv::Mat sqrtMat(int n, float lambda, Mat matrix) 
+cv::Mat sqrtMat(Mat matrix) 
 {	
-	matrix = (n + lambda) * matrix;
+	//matrix = (n + lambda) * matrix;
 
 	// Convert a Mat into a Eigen matrix using the constructor.
 	Eigen::MatrixXf sqrtCovMatrix(matrix.rows, matrix.cols);
@@ -335,9 +335,9 @@ cv::Mat sqrtMat(int n, float lambda, Mat matrix)
 			sqrtCovMatrix(i, j) = matrix.at<float>(i, j);
 
 	// Calculate Cholesky decomposition.
-	Eigen::LLT<Eigen::MatrixXd> lltOfA(sqrtCovMatrix);
+	Eigen::LLT<Eigen::MatrixXf> lltOfA(sqrtCovMatrix);
 
-	Eigen::MatrixXd L;
+	Eigen::MatrixXf L;
 	// Check if the decomposition was successful.
 	if (lltOfA.info() == Eigen::Success) {
 		// Obtain the lower triangular matrix L from the Cholesky decomposition.
@@ -348,9 +348,26 @@ cv::Mat sqrtMat(int n, float lambda, Mat matrix)
 	}
 
 	// Convert a matrix from Eigen library to opencv.
-	Mat cvMatrix(L.rows(), L.cols(), CV_64F, L.data());
+	Mat cvMatrix(L.rows(), L.cols(), CV_32F, L.data());
 
-	return cvMatrix;
+	return cvMatrix.t();
+}
+
+void sigmaPointsUpdateState(Mat statePre, Mat sqrtmat, float theta, Mat& SigmaZero, Mat& SigmaLeft, Mat& SigmaRight)
+{
+	SigmaZero = statePre;
+	SigmaLeft = cv::Mat::zeros(sqrtmat.size(), CV_32F);
+	SigmaRight = cv::Mat::zeros(sqrtmat.size(), CV_32F);
+
+	for (size_t i = 0; i < statePre.rows; i++)
+	{
+		SigmaLeft.col(i) = statePre + theta * sqrtmat.col(i);
+		SigmaRight.col(i) = statePre - theta * sqrtmat.col(i);
+
+		std::cout << SigmaLeft << std::endl;
+		std::cout << std::endl;
+		std::cout << SigmaRight << std::endl;
+	}
 }
 
 int main(int argc, char** argv)
@@ -364,7 +381,9 @@ int main(int argc, char** argv)
 	barData umLuz(100. / SLIDE_MAX, 0);
 	int dSlidePos = 176, lSlidePos = 176;
 
+	// Size of the state vector.
 	int n = 6;
+
 	// Initialization of Extended Kalman Filter
 	KalmanFilter KF(n, 5, 0);
 
@@ -390,6 +409,11 @@ int main(int argc, char** argv)
 	float alpha = 1;
 	int beta = 2;
 	float lambda = (alpha * alpha) * (n + k) - n;
+	float theta = sqrt(n + lambda);
+
+	float w0m = lambda / (n + lambda);
+	float w0c = w0m + (1 - alpha * alpha + beta);
+	float wi = 1 / (2 * (n + lambda));
 
 	float X = 1;
 	float Y = 1;
@@ -611,6 +635,25 @@ int main(int argc, char** argv)
 
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
+
+				// Calculate the square root of the error covariance matrix.
+				Mat sqrtmat = sqrtMat(KF.errorCovPre);
+
+				std::cout << "errorCovPre: " << KF.errorCovPre << std::endl;
+
+				// Print sqrtmat.
+				std::cout << "sqrtmat: " << sqrtmat << std::endl;
+
+
+				Mat SigmaZero;
+				Mat SigmaLeft;
+				Mat SigmaRight;
+
+				sigmaPointsUpdateState(KF.statePre, sqrtmat, theta, SigmaZero, SigmaLeft, SigmaRight);
+
+				std::cout << "SigmaZero: " << SigmaZero << std::endl;
+				std::cout << "SigmaLeft: " << SigmaLeft << std::endl;
+				std::cout << "SigmaRight: " << SigmaRight << std::endl;
 			}
 			else
 			{
@@ -639,16 +682,7 @@ int main(int argc, char** argv)
 					0, 0, 0, 0, 0, 1
 					);
 
-			// Jacobian of h(x)
-			KF.measurementMatrix =
-				(Mat_ < float >(5, 6) <<
-					1 / Z, 0, -X / pow(Z, 2), 0, 0, 0,
-					0, 1 / Z, -Y / pow(Z, 2), 0, 0, 0,
-					ZDer / pow(Z, 2), 0, (-XDer / pow(Z, 2)) - ((2 * X * ZDer) / pow(Z, 3)), 1 / Z, 0, X / pow(Z, 2),
-					0, ZDer / pow(Z, 2), (-YDer / pow(Z, 2)) - ((2 * Y * ZDer) / pow(Z, 3)), 0, 1 / Z, Y / pow(Z, 2),
-					0, 0, -Rm / pow(Z, 2), 0, 0, 0
-					);
-
+			// Matrix that relates de state vector with the measurement vector.
 			Mat h =
 				(Mat_ < float >(5, 1) <<
 					X / Z,
@@ -658,13 +692,7 @@ int main(int argc, char** argv)
 					Rm / Z
 					);
 
-			// Calculate the square root of the error covariance matrix.
-			Mat sqrtmat = sqrtMat(KF.statePre.rows, lambda,KF.errorCovPre);
-			
 			// Update the state from the last measurement.
-			Mat SigmaZero = KF.statePost;
-
-
 			Mat temp = KF.measurementMatrix * KF.errorCovPre * KF.measurementMatrix.t() + KF.measurementNoiseCov;
 			Mat inverse;
 			cv::invert(temp, inverse, cv::DECOMP_LU);
