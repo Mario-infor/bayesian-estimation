@@ -441,7 +441,7 @@
 //		if (frame.empty())
 //			break;
 //
-//		if (!roiRectCopy.empty())
+//		/*if (!roiRectCopy.empty())
 //		{
 //			roiMask = cv::Mat::zeros(frame.size(), CV_8U);
 //			cv::rectangle(roiMask, roiRectCopy, cv::Scalar(255), FILLED);
@@ -449,7 +449,7 @@
 //			frame.copyTo(result, roiMask);
 //			cv::imshow("Result", result);
 //			result.copyTo(frame);
-//		}
+//		}*/
 //
 //		frame.convertTo(fFrame, CV_32FC3);
 //
