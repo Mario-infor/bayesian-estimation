@@ -20,6 +20,8 @@ using namespace cv;
 #define  a_COMPONENT  30.677		//!< El valor del componente a del modelo de color.
 #define  b_COMPONENT 58.212			//!< El valor del componente b del modelo de color.
 
+#define __VERBOSE__	true				//!< This macro enables the printing of debug messages.
+
 /*!
 \fn void printMat(Mat &M, const char *name = NULL, bool transp=false)
 \brief Esta funcion imprime en stdout como texto el contenido de una matriz
@@ -320,6 +322,22 @@ std::vector<int> readTimes(string path)
 
 	return data;
 }
+// Print formatted matrix.
+void printMatrix(cv::Mat matrix, std::string name)
+{
+	if (__VERBOSE__)
+	{
+		// Convert a Mat into a Eigen matrix using the constructor.
+		Eigen::MatrixXf sqrtCovMatrix(matrix.rows, matrix.cols);
+
+		// Pass data into the Eigen matrix.
+		for (int i = 0; i < matrix.rows; i++)
+			for (int j = 0; j < matrix.cols; j++)
+				sqrtCovMatrix(i, j) = matrix.at<float>(i, j);
+
+		std::cout << name << std::endl << sqrtCovMatrix << std::endl << std::endl;
+	}
+}
 
 // Update transition matrix.
 void updateTransitionMatrix(cv::Mat& transitionMatrix, const int deltaT)
@@ -338,8 +356,6 @@ void updateTransitionMatrix(cv::Mat& transitionMatrix, const int deltaT)
 // Calculate the square root of a matrix.
 cv::Mat sqrtMat(Mat matrix)
 {
-	std::cout << matrix << std::endl << std::endl;
-
 	// Convert a Mat into a Eigen matrix using the constructor.
 	Eigen::MatrixXf sqrtCovMatrix(matrix.rows, matrix.cols);
 
@@ -347,8 +363,6 @@ cv::Mat sqrtMat(Mat matrix)
 	for (int i = 0; i < matrix.rows; i++)
 		for (int j = 0; j < matrix.cols; j++)
 			sqrtCovMatrix(i, j) = matrix.at<float>(i, j);
-
-	std::cout << sqrtCovMatrix << std::endl << std::endl;
 
 	// Calculate Cholesky decomposition.
 	Eigen::LLT<Eigen::MatrixXf> lltOfA(sqrtCovMatrix);
@@ -365,8 +379,6 @@ cv::Mat sqrtMat(Mat matrix)
 
 	// Convert a matrix from Eigen library to opencv.
 	Mat cvMatrix(L.rows(), L.cols(), CV_32F, L.data());
-
-	std::cout << cvMatrix << std::endl << std::endl;
 
 	return cvMatrix.t();
 }
@@ -412,7 +424,7 @@ cv::Mat getH(Mat statePre, float Rm)
 	}
 	else
 	{
-		// crear una matriz llena de ceros.
+		// Create a full zero matrix.
 		h = Mat::zeros(5, 1, CV_32F);
 	}
 
@@ -429,7 +441,7 @@ cv::Mat getZHat(cv::Mat sigmaPoints, float Rm)
 		cv::Mat hi = getH(sigmaPoints.col(i), Rm);
 		hi.copyTo(zHat.col(i));
 	}
-	std::cout << zHat << std::endl << std::endl;
+
 	return zHat;
 }
 
@@ -464,6 +476,9 @@ cv::Mat getS(cv::Mat zHat, cv::Mat zHatMean, float wi, float w0c, cv::Mat measur
 	for (size_t i = 0; i < zHat.cols; i++)
 	{
 		Mat temp = zHat.col(i) - zHatMean;
+
+		std::cout << "temp size: " << std::endl << temp.size << std::endl << std::endl;
+
 		if (i == 0)
 			S += w0c * temp * temp.t();
 		else
@@ -530,7 +545,7 @@ int main(int argc, char** argv)
 	Mat K =
 		(Mat_ < float >(3, 3) <<
 			7.7318146334666767e+02, 0.0, 4.0726293453767408e+02,
-			0.0, 7.7318146334666767e+02, 3.0623163696686174e+02,
+			0.0, -7.7318146334666767e+02, 3.0623163696686174e+02,
 			0.0, 0.0, 1.0
 			);
 
@@ -576,7 +591,7 @@ int main(int argc, char** argv)
 	cap.set(CAP_PROP_FRAME_HEIGHT, IM_HEIGHT);
 
 	namedWindow("Entrada", 1);
-	namedWindow("Mascara", 1);
+	//namedWindow("Mascara", 1);
 
 	createTrackbar("umDist", "Entrada", &dSlidePos, SLIDE_MAX, umDistChange, (void*)&umDist);
 	createTrackbar("umLuz", "Entrada", &lSlidePos, SLIDE_MAX, umLuzChange, (void*)&umLuz);
@@ -648,19 +663,22 @@ int main(int argc, char** argv)
 			firstImage = false;
 		}
 
-		cv::imshow("Entrada", frame);
 		Umbraliza(labFrame, Mask, Mean, iCov, umDist.val, umLuz.val);
+		//Umbraliza(labFrame, Mask, Mean, iCov, 473, 586);
 
 		// Find all contours in the image
 		std::vector<std::vector<cv::Point>> contours;
-		cv::imshow("Mascara", Mask);
+		//cv::imshow("Mascara", Mask);
 		cv::findContours(Mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		cv::Mat contourImage;
 		frame.copyTo(contourImage);
 
+		cv::Mat filteredContourImage;
+		frame.copyTo(filteredContourImage);
+
 		// Draw contours on image and show the resulting image
-		cv::drawContours(contourImage, contours, -1, cv::Scalar(0, 0, 255), 2);
+		cv::drawContours(frame, contours, -1, cv::Scalar(0, 0, 255), 2);
 
 		std::vector<std::vector<cv::Point>> filteredContours;
 		Circle tempCircle;
@@ -688,7 +706,7 @@ int main(int argc, char** argv)
 
 				// Draw temp circle on countour image.
 				if (tempError != -1)
-					cv::circle(contourImage, cv::Point(tempCircle.h, tempCircle.k), tempCircle.r, cv::Scalar(0, 255, 0), 2);
+					cv::circle(frame, cv::Point(tempCircle.h, tempCircle.k), tempCircle.r, cv::Scalar(255, 0, 0), 2);
 
 				// Make shure that the contour saved is the one with lesser error
 				if (tempCircle.r != 0 && tempError < smallestError)
@@ -710,20 +728,14 @@ int main(int argc, char** argv)
 		}
 
 		// Draw best circle on countour image.
-		cv::Mat filteredContourImage;
-		frame.copyTo(filteredContourImage);
 		cv::drawContours(filteredContourImage, filteredContours, -1, cv::Scalar(255, 0, 0), 2);
-
-		// Press space bar to start tracking.
-		if (cv::waitKey(1) == 32)
-			startTracking = true;
 
 		// If we have a circle and we are tracking, we start the Kalman filter.
 		if (startTracking && bestCircle.r != 0)
 		{
 			// Draw square where we will look for the ball on the next iteration.
-			newSquareX = bestCircle.h - bestCircle.r - (squareSize / 2);
-			newSquareY = bestCircle.k - bestCircle.r - (squareSize / 2);
+			newSquareX = bestCircle.h - bestCircle.r - ((float)squareSize / 2);
+			newSquareY = bestCircle.k - bestCircle.r - ((float)squareSize / 2);
 
 			if (newSquareX < 0)
 				newSquareX = 0;
@@ -743,10 +755,10 @@ int main(int argc, char** argv)
 				KF.statePre = KF.transitionMatrix * KF.statePost;
 				KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
 
-				std::cout << "KF.statePre: " << std::endl << KF.statePre << std::endl << std::endl;
+				printMatrix(KF.statePre, "KF.statePre");
+				printMatrix(KF.errorCovPre, "KF.errorCovPre");
 
 				deltaT = times.at(index) - times.at(index - 1);
-				deltaTOld = times.at(index);
 
 				updateTransitionMatrix(KF.transitionMatrix, deltaT);
 
@@ -759,33 +771,70 @@ int main(int argc, char** argv)
 				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
 				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 
-				std::cout << "measurement: " << std::endl << measurement << std::endl << std::endl;
+				printMatrix(measurement, "measurement");
 
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
+
+
+				// Calculate the square root of the error covariance matrix. (6x6)
+				Mat sqrtmat = sqrtMat(KF.errorCovPre);
+				printMatrix(sqrtmat, "sqrtmat");
+
+				// Calculate the sigma points. (6x13)
+				Mat Sigmapoints = sigmaPointsUpdateState(KF.statePre, sqrtmat, theta);
+				printMatrix(Sigmapoints, "Sigmapoints");
+
+				// (5x13)
+				Mat ZHat = getZHat(Sigmapoints, Rm);
+				printMatrix(ZHat, "ZHat");
+
+				// (5x1)
+				Mat ZHatMean = getZHatMean(ZHat, wi, w0m);
+				printMatrix(ZHatMean, "ZHatMean");
+
+				// (5x5)
+				Mat S = getS(ZHat, ZHatMean, wi, w0c, KF.measurementNoiseCov);
+				printMatrix(S, "S");
+
+				// (6x5)
+				Mat SigmaXZ = getSigmaXZ(Sigmapoints, ZHat, ZHatMean, wi, w0c);
+				printMatrix(SigmaXZ, "SigmaXZ");
+
+				// (5x5)
+				Mat SInvert;
+				cv::invert(S, SInvert, cv::DECOMP_LU);
+				printMatrix(SInvert, "SInvert");
+
+				// (6x5)
+				KF.gain = SigmaXZ * SInvert;
+				printMatrix(KF.gain, "KF.gain");
+
+				// (6x1)
+				KF.statePost = KF.statePre + KF.gain * (measurement - ZHatMean);
+
+				// (6x6)
+				KF.errorCovPost = KF.errorCovPre - KF.gain * S * KF.gain.t();
 			}
 			else
 			{
-				//deltaT = 30;
-				deltaTOld = times.at(index - 1);
 				deltaT = times.at(index) - times.at(index - 1);
-				//deltaTOld = times.at(0);
-				deltaTOld = times.at(index);
 				updateTransitionMatrix(KF.transitionMatrix, deltaT);
 
 				// Convert h and k from pixels to meters
 				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
 
-				std::cout << "Temp: " << std::endl << temp << std::endl << std::endl;
+				printMatrix(temp, "temp");
 
 				KF.statePre.at < float >(0) = temp.at< float >(0, 0);
 				KF.statePre.at < float >(1) = temp.at< float >(1, 0);
 				KF.statePre.at < float >(2) = (K.at<float>(0, 0) * Rm) / bestCircle.r;
+				//KF.statePre.at < float >(2) = bestCircle.r * KI.at<float>(0, 0);
 				KF.statePre.at < float >(3) = 0;
 				KF.statePre.at < float >(4) = 0;
 				KF.statePre.at < float >(5) = 0;
 
-				std::cout << "KF.statePre: " << std::endl << KF.statePre << std::endl << std::endl;
+				printMatrix(KF.statePre, "KF.statePre");
 
 				measurement(0) = temp.at< float >(0, 0);
 				measurement(1) = temp.at< float >(1, 0);
@@ -793,46 +842,20 @@ int main(int argc, char** argv)
 				measurement(3) = 0;
 				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 
-				std::cout << "measurement: " << std::endl << measurement << std::endl << std::endl;
+				printMatrix(measurement, "measurement");
 
 				measurementXOld = measurement(0);
 				measurementYOld = measurement(1);
+
+				// (6x1)
+				KF.statePost = KF.statePre;
+
+				// (6x6)
+				KF.errorCovPost = KF.errorCovPre;
 			}
 
-			// Symetrize the error covariance matrix.
-			//symetrize(KF.errorCovPre);
-
-			// Calculate the square root of the error covariance matrix.
-			Mat sqrtmat = sqrtMat(KF.errorCovPre);
-			std::cout << "sqrtmat: " << std::endl << sqrtmat << std::endl << std::endl;
-
-			// Calculate the sigma points.
-			Mat Sigmapoints = sigmaPointsUpdateState(KF.statePre, sqrtmat, theta);
-			std::cout << "Sigmapoints: " << std::endl << Sigmapoints << std::endl << std::endl;
-
-			Mat ZHat = getZHat(Sigmapoints, Rm);
-			std::cout << "ZHat: " << std::endl << ZHat << std::endl << std::endl;
-
-			Mat ZHatMean = getZHatMean(ZHat, wi, w0m);
-			std::cout << "ZHatMean: " << std::endl << ZHatMean << std::endl << std::endl;
-
-			Mat S = getS(ZHat, ZHatMean, wi, w0c, KF.measurementNoiseCov);
-			std::cout << "S: " << std::endl << S << std::endl << std::endl;
-
-			Mat SigmaXZ = getSigmaXZ(Sigmapoints, ZHat, ZHatMean, wi, w0c);
-			std::cout << "SigmaXZ: " << std::endl << SigmaXZ << std::endl << std::endl;
-
-			Mat SInvert;
-			cv::invert(S, SInvert, cv::DECOMP_LU);
-			std::cout << "SInvert: " << std::endl << SInvert << std::endl << std::endl;
-
-			KF.gain = SigmaXZ * SInvert;
-			std::cout << "KF.gain: " << std::endl << KF.gain << std::endl << std::endl;
-
-			KF.statePost = KF.statePre + KF.gain * (measurement - ZHatMean);
-			KF.errorCovPost = KF.errorCovPre - KF.gain * S * KF.gain.t();
-
-			std::cout << "State Post: " << KF.statePost << std::endl << std::endl;
+			printMatrix(KF.statePost, "KF.statePost");
+			printMatrix(KF.errorCovPost, "KF.errorCovPost");
 
 			// Draw predicted circle.
 			// Convert X, Y and r from state to pixels
@@ -840,13 +863,18 @@ int main(int argc, char** argv)
 			float Y = KF.statePost.at<float>(1);
 			float Z = KF.statePost.at<float>(2);
 
-			Mat tempDraw = K * (Mat_ <float>(3, 1) << X / Z, Y / Z, 1);
+			Mat tempDraw = K * (Mat_ <float>(3, 1) << X, Y, Z);
 
-			std::cout << "tempDraw: " << std::endl << tempDraw << std::endl << std::endl;
+			tempDraw.at<float>(0, 0) = tempDraw.at<float>(0, 0) / tempDraw.at<float>(2, 0);
+			tempDraw.at<float>(1, 0) = tempDraw.at<float>(1, 0) / tempDraw.at<float>(2, 0);
+
+			printMatrix(tempDraw, "tempDraw");
 
 			float drawH = tempDraw.at<float>(0, 0);
 			float drawK = tempDraw.at<float>(1, 0);
 			float drawR = (K.at<float>(0, 0) * Rm) / Z;
+
+			std::cout << "drawR: " << std::endl << drawR << std::endl << std::endl;
 
 			try
 			{
@@ -863,14 +891,23 @@ int main(int argc, char** argv)
 
 		index++;
 
-		cv::imshow("Countours", contourImage);
+		//cv::imshow("Countours", contourImage);
+		cv::imshow("Entrada", frame);
 		cv::imshow("FilteredCountours", filteredContourImage);
-		cv::imshow("Mascara", Mask);
+		//cv::imshow("Mascara", Mask);
+
+		// Pause the program until user press a key
+		int key = cv::waitKey(0);
+		// Press Space bar to start tracking.
+		if (key == 32)
+			startTracking = true;
 	}
 
 	// Close windows that were opened
-	cv::destroyWindow("Mascara");
-	cv::destroyWindow("Entrada");
+	//cv::destroyWindow("Mascara");
+	//cv::destroyWindow("Entrada");
+
+	cv::destroyAllWindows();
 
 	return 0;
 }

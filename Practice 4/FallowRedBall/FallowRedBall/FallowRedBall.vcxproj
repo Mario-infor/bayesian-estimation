@@ -134,7 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Circle.cpp" />
-    <ClCompile Include="SegColorLab.cpp" />
+    <ClCompile Include="EKF.cpp" />
     <ClCompile Include="UKF.cpp" />
   </ItemGroup>
   <ItemGroup>
