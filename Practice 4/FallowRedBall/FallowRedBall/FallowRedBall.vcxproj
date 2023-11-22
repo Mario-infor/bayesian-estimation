@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="Circle.cpp" />
     <ClCompile Include="EKF.cpp" />
+    <ClCompile Include="Implicit_EKF.cpp" />
     <ClCompile Include="UKF.cpp" />
   </ItemGroup>
   <ItemGroup>
