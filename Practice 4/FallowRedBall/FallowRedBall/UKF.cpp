@@ -20,7 +20,7 @@
 //#define  a_COMPONENT  30.677		//!< El valor del componente a del modelo de color.
 //#define  b_COMPONENT 58.212			//!< El valor del componente b del modelo de color.
 //
-//#define __VERBOSE__	false				//!< This macro enables the printing of debug messages.
+//#define __VERBOSE__	true				//!< This macro enables the printing of debug messages.
 //
 ///*!
 //\fn void printMat(Mat &M, const char *name = NULL, bool transp=false)
@@ -477,8 +477,6 @@
 //	{
 //		Mat temp = zHat.col(i) - zHatMean;
 //
-//		std::cout << "temp size: " << std::endl << temp.size << std::endl << std::endl;
-//
 //		if (i == 0)
 //			S += w0c * temp * temp.t();
 //		else
@@ -560,11 +558,15 @@
 //	float alpha = 1;
 //	int beta = 2;
 //	float lambda = (alpha * alpha) * (n + k) - n;
+//	//float lambda = 3 - n;
 //	float theta = sqrt(n + lambda);
 //
 //	float w0m = lambda / (n + lambda);
 //	float w0c = w0m + (1 - alpha * alpha + beta);
 //	float wi = 1 / (2 * (n + lambda));
+//
+//	//float w0m = lambda / (n + lambda);
+//	//float wi = 0.5 / (n + lambda);
 //
 //	float Rm = 0.0199;
 //
@@ -577,6 +579,8 @@
 //	setIdentity(KF.measurementNoiseCov, Scalar::all(1));
 //	setIdentity(KF.errorCovPost, Scalar::all(.1));
 //	//setIdentity(KF.errorCovPre, Scalar::all(.1));
+//
+//	KF.measurementNoiseCov.at<float>(2, 2) = 10;
 //
 //	// Read video
 //	//cv::VideoCapture cap("Resorces/Videos/GreeBallBlender25fpsTransparent.mkv");
@@ -755,8 +759,8 @@
 //				KF.statePre = KF.transitionMatrix * KF.statePost;
 //				KF.errorCovPre = KF.transitionMatrix * KF.errorCovPost * KF.transitionMatrix.t() + KF.processNoiseCov;
 //
-//				printMatrix(KF.statePre, "KF.statePre");
-//				printMatrix(KF.errorCovPre, "KF.errorCovPre");
+//				//printMatrix(KF.statePre, "KF.statePre");
+//				//printMatrix(KF.errorCovPre, "KF.errorCovPre");
 //
 //				deltaT = times.at(index) - times.at(index - 1);
 //
@@ -771,7 +775,7 @@
 //				measurement(3) = (measurementYOld - measurement(1)) / deltaT;
 //				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
 //
-//				printMatrix(measurement, "measurement");
+//				//printMatrix(measurement, "measurement");
 //
 //				measurementXOld = measurement(0);
 //				measurementYOld = measurement(1);
@@ -779,46 +783,55 @@
 //
 //				// Calculate the square root of the error covariance matrix. (6x6)
 //				Mat sqrtmat = sqrtMat(KF.errorCovPre);
-//				printMatrix(sqrtmat, "sqrtmat");
+//				//printMatrix(sqrtmat, "sqrtmat");
 //
 //				// Calculate the sigma points. (6x13)
 //				Mat Sigmapoints = sigmaPointsUpdateState(KF.statePre, sqrtmat, theta);
-//				printMatrix(Sigmapoints, "Sigmapoints");
+//				//printMatrix(Sigmapoints, "Sigmapoints");
 //
 //				// (5x13)
 //				Mat ZHat = getZHat(Sigmapoints, Rm);
-//				printMatrix(ZHat, "ZHat");
+//				//printMatrix(ZHat, "ZHat");
 //
 //				// (5x1)
 //				Mat ZHatMean = getZHatMean(ZHat, wi, w0m);
 //				printMatrix(ZHatMean, "ZHatMean");
 //
 //				// (5x5)
-//				Mat S = getS(ZHat, ZHatMean, wi, w0c, KF.measurementNoiseCov);
-//				printMatrix(S, "S");
+//				Mat S = getS(ZHat, ZHatMean, wi, w0m, KF.measurementNoiseCov);
+//				//printMatrix(S, "S");
 //
 //				// (6x5)
-//				Mat SigmaXZ = getSigmaXZ(Sigmapoints, ZHat, ZHatMean, wi, w0c);
-//				printMatrix(SigmaXZ, "SigmaXZ");
+//				Mat SigmaXZ = getSigmaXZ(Sigmapoints, ZHat, ZHatMean, wi, w0m);
+//				//printMatrix(SigmaXZ, "SigmaXZ");
 //
 //				// (5x5)
 //				Mat SInvert;
 //				cv::invert(S, SInvert, cv::DECOMP_LU);
-//				printMatrix(SInvert, "SInvert");
+//				//printMatrix(SInvert, "SInvert");
 //
 //				// (6x5)
 //				KF.gain = SigmaXZ * SInvert;
 //				printMatrix(KF.gain, "KF.gain");
+//
+//				printMatrix(KF.gain * (measurement - ZHatMean), "KF.gain * (measurement - ZHatMean)");
+//				printMatrix(measurement - ZHatMean, "measurement - ZHatMean");
+//				printMatrix(measurement, "measurement");
+//				printMatrix(ZHatMean, "ZHatMean");
 //
 //				// (6x1)
 //				KF.statePost = KF.statePre + KF.gain * (measurement - ZHatMean);
 //
 //				// (6x6)
 //				KF.errorCovPost = KF.errorCovPre - KF.gain * S * KF.gain.t();
+//
+//				printMatrix(KF.statePost, "KF.statePost");
+//				printMatrix(KF.errorCovPost, "KF.errorCovPost");
 //			}
 //			else
 //			{
 //				deltaT = times.at(index) - times.at(index - 1);
+//
 //				updateTransitionMatrix(KF.transitionMatrix, deltaT);
 //
 //				// Convert h and k from pixels to meters
@@ -830,23 +843,11 @@
 //				KF.statePre.at < float >(0) = temp.at< float >(0, 0);
 //				KF.statePre.at < float >(1) = temp.at< float >(1, 0);
 //				KF.statePre.at < float >(2) = (K.at<float>(0, 0) * Rm) / bestCircle.r;
-//				//KF.statePre.at < float >(2) = bestCircle.r * KI.at<float>(0, 0);
 //				KF.statePre.at < float >(3) = 0;
 //				KF.statePre.at < float >(4) = 0;
 //				KF.statePre.at < float >(5) = 0;
 //
 //				printMatrix(KF.statePre, "KF.statePre");
-//
-//				/*measurement(0) = temp.at< float >(0, 0);
-//				measurement(1) = temp.at< float >(1, 0);
-//				measurement(2) = 0;
-//				measurement(3) = 0;
-//				measurement(4) = bestCircle.r * KI.at<float>(0, 0);
-//
-//				printMatrix(measurement, "measurement");
-//
-//				measurementXOld = measurement(0);
-//				measurementYOld = measurement(1);*/
 //
 //				// (6x1)
 //				KF.statePost = KF.statePre;
@@ -854,9 +855,6 @@
 //				// (6x6)
 //				KF.errorCovPost = KF.errorCovPre;
 //			}
-//
-//			printMatrix(KF.statePost, "KF.statePost");
-//			printMatrix(KF.errorCovPost, "KF.errorCovPost");
 //
 //			// Draw predicted circle.
 //			// Convert X, Y and r from state to pixels

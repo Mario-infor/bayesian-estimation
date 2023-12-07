@@ -563,7 +563,7 @@
 //				index++;
 //
 //				Mat temp = KI * (Mat_ <float>(3, 1) << bestCircle.h, bestCircle.k, 1);
-//				
+//
 //				temp = temp / temp.at<float>(2, 0);
 //
 //				measurement(0) = temp.at< float >(0, 0);
@@ -596,13 +596,22 @@
 //						0, 0, -Rm / pow(Z, 2), 0, 0, 0
 //						);*/
 //
-//				// Jacobian of h(x)
+//						// Jacobian of h(x)
+//						/*KF.measurementMatrix =
+//							(Mat_ < float >(5, 6) <<
+//								1 / Z, 0, -X / pow(Z, 2), 0, 0, 0,
+//								0, 1 / Z, -Y / pow(Z, 2), 0, 0, 0,
+//								ZDer / pow(Z, 2), 0, XDer / pow(Z, 2) - 2 * (X * ZDer + Z * XDer) / pow(Z, 3), 1 / Z, 0, X / pow(Z, 2),
+//								0, ZDer / pow(Z, 2), YDer / pow(Z, 2) - 2 * (Y * ZDer + Z * YDer) / pow(Z, 3), 0, 1 / Z, Y / pow(Z, 2),
+//								0, 0, -Rm / pow(Z, 2), 0, 0, 0
+//								);*/
+//
 //				KF.measurementMatrix =
 //					(Mat_ < float >(5, 6) <<
 //						1 / Z, 0, -X / pow(Z, 2), 0, 0, 0,
 //						0, 1 / Z, -Y / pow(Z, 2), 0, 0, 0,
-//						ZDer / pow(Z, 2), 0, XDer / pow(Z, 2) - 2 * (X * ZDer + Z * XDer) / pow(Z, 3), 1 / Z, 0, X / pow(Z, 2),
-//						0, ZDer / pow(Z, 2), YDer / pow(Z, 2) - 2 * (Y * ZDer + Z * YDer) / pow(Z, 3), 0, 1 / Z, Y / pow(Z, 2),
+//						-ZDer / pow(Z, 2), 0, ((2 * X * ZDer) / pow(Z, 3)) - XDer / pow(Z, 2), 1 / Z, 0, -X / pow(Z, 2),
+//						0, -ZDer / pow(Z, 2), ((2 * Y * ZDer) / pow(Z, 3)) - YDer / pow(Z, 2), 0, 1 / Z, -Y / pow(Z, 2),
 //						0, 0, -Rm / pow(Z, 2), 0, 0, 0
 //						);
 //
@@ -610,8 +619,8 @@
 //					(Mat_ < float >(5, 1) <<
 //						X / Z,
 //						Y / Z,
-//						(XDer + (X / Z) * ZDer) / Z,
-//						(YDer + (Y / Z) * ZDer) / Z,
+//						(XDer - (X / Z) * ZDer) / Z,
+//						(YDer - (Y / Z) * ZDer) / Z,
 //						Rm / Z
 //						);
 //
