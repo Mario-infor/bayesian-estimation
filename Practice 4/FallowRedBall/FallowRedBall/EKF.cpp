@@ -6,6 +6,7 @@
 //#include <cstdio>
 //#include "Circle.h"
 //#include <cmath>
+//#include <Eigen/Dense>
 //
 //#define SLIDE_MAX 1000					//!< El valor maximo de pasos del control de barra deslizante del GUI.
 //
@@ -18,6 +19,8 @@
 //
 //#define  a_COMPONENT  30.677		//!< El valor del componente a del modelo de color.
 //#define  b_COMPONENT 58.212			//!< El valor del componente b del modelo de color.
+//
+//#define __VERBOSE__	true
 //
 ///*!
 //\fn void printMat(Mat &M, const char *name = NULL, bool transp=false)
@@ -320,6 +323,23 @@
 //	return data;
 //}
 //
+//// Print formatted matrix.
+//void printMatrix(cv::Mat matrix, std::string name)
+//{
+//	if (__VERBOSE__)
+//	{
+//		// Convert a Mat into a Eigen matrix using the constructor.
+//		Eigen::MatrixXf sqrtCovMatrix(matrix.rows, matrix.cols);
+//
+//		// Pass data into the Eigen matrix.
+//		for (int i = 0; i < matrix.rows; i++)
+//			for (int j = 0; j < matrix.cols; j++)
+//				sqrtCovMatrix(i, j) = matrix.at<float>(i, j);
+//
+//		std::cout << name << std::endl << sqrtCovMatrix << std::endl << std::endl;
+//	}
+//}
+//
 //int main()
 //{
 //	Mat frame, fFrame, labFrame, roi;
@@ -346,6 +366,8 @@
 //
 //	Mat KI;
 //	cv::invert(K, KI, cv::DECOMP_LU);
+//
+//	printMatrix(KI, "KI");
 //
 //	int index = 1;
 //	float deltaT;
